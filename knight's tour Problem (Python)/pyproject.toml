@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "knights-tour-python"
+version = "1.0.0"
+description = "Knight's Tour game logic and solvers in pure Python"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Knight Tour Project" }]
+dependencies = ["flask>=3.0.0", "flask-cors>=4.0.0"]
+
+[project.scripts]
+knights-tour = "knighttour.app:main"
+knights-tour-gui = "knighttour.gui:main"
+knights-tour-api = "knighttour.api:run_server"
+
+[tool.setuptools]
+package-dir = {"" = "backend"}
+
+[tool.setuptools.packages.find]
+where = ["backend"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
