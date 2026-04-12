@@ -465,13 +465,17 @@ function App() {
     }
 
     function startNewRound() {
-        const randomStart = randomStartPosition(boardSize);
+        const configuredStart = createStartPosition(
+            boardSize,
+            parseBoardIndex(startRow),
+            parseBoardIndex(startCol),
+        );
         if (mode === 'solver') {
-            generateSolverTour(randomStart);
+            generateSolverTour(configuredStart);
             return;
         }
 
-        beginManualTour(randomStart);
+        beginManualTour(configuredStart);
     }
 
     function enterGameFromMenu() {
