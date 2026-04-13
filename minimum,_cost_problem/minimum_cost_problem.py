@@ -87,3 +87,11 @@ def fetch_rounds():
         rows = cur.fetchall(); cur.close(); conn.close()
         return rows
     except Error: return []
+
+# hungarian algorithm
+def hungarian_algorithm(cost_matrix):
+    t0 = time.perf_counter()
+    ri, ci = linear_sum_assignment(cost_matrix)
+    total  = cost_matrix[ri, ci].sum()
+    assign = [(int(r), int(c), float(cost_matrix[r,c])) for r,c in zip(ri,ci)]
+    return total, assign, time.perf_counter()-t0
