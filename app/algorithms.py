@@ -88,3 +88,4 @@ def edmonds_karp_max_flow(capacities: CapacityMap, source: str, sink: str) -> in
 
 def capacities_from_edge_list(edge_caps: List[Tuple[str, str, int]]) -> CapacityMap:
     return {(u, v): cap for u, v, cap in edge_caps}
+ 
