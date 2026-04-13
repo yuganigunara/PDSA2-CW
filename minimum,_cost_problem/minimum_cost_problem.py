@@ -95,3 +95,18 @@ def hungarian_algorithm(cost_matrix):
     total  = cost_matrix[ri, ci].sum()
     assign = [(int(r), int(c), float(cost_matrix[r,c])) for r,c in zip(ri,ci)]
     return total, assign, time.perf_counter()-t0
+
+# greedy algorithm
+def greedy_algorithm(cost_matrix):
+    t0 = time.perf_counter()
+    n  = cost_matrix.shape[0]
+    pairs = sorted([(cost_matrix[i,j],i,j) for i in range(n) for j in range(n)],
+                   key=lambda x: x[0])
+    emp_done, task_done, assign, total = set(), set(), [], 0.0
+    for cost, e, t in pairs:
+        if e not in emp_done and t not in task_done:
+            assign.append((e, t, float(cost)))
+            total += cost
+            emp_done.add(e); task_done.add(t)
+        if len(assign) == n: break
+    return total, assign, time.perf_counter()-t0
