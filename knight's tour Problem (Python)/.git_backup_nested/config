@@ -1,0 +1,30 @@
+[core]
+	repositoryformatversion = 0
+	filemode = false
+	bare = false
+	logallrefupdates = true
+	symlinks = false
+	ignorecase = true
+[remote "origin"]
+	url = https://github.com/yuganigunara/PDSA2-CW.git
+	fetch = +refs/heads/*:refs/remotes/origin/*
+[branch "yugani"]
+	remote = origin
+	merge = refs/heads/yugani
+	vscode-merge-base = origin/yugani
+[branch "dehansa"]
+	remote = origin
+	merge = refs/heads/dehansa
+	vscode-merge-base = origin/dehansa
+[branch "main"]
+	remote = origin
+	merge = refs/heads/main
+	vscode-merge-base = origin/main
+[branch "daham"]
+	remote = origin
+	merge = refs/heads/daham
+	vscode-merge-base = origin/daham
+[branch "Team02"]
+	remote = origin
+	merge = refs/heads/Team02
+	vscode-merge-base = origin/Team02

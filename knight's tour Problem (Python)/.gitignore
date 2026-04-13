@@ -1,0 +1,35 @@
+# Python caches and environments
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+
+# Test/coverage artifacts
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Local runtime data
+*.db
+*.sqlite
+*.sqlite3
+.knights_tour.db
+.knights_tour_winners.json
+
+# Node dependencies and build output
+frontend/node_modules/
+frontend/dist/
+
+# Vite/TypeScript build info
+*.tsbuildinfo
+frontend/tsconfig.tsbuildinfo
+frontend/tsconfig.node.tsbuildinfo
+
+# Logs and OS/editor files
+*.log
+.DS_Store
+Thumbs.db
+.vscode/

@@ -1,0 +1,128 @@
+:root {
+  color-scheme: light;
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: #f5f7fb;
+  color: #182230;
+}
+
+.container {
+  max-width: 1080px;
+  margin: 2rem auto;
+  padding: 0 1rem 2rem;
+}
+
+h1 {
+  margin: 0;
+}
+
+.subtitle {
+  margin-top: 0.3rem;
+  color: #516176;
+}
+
+.board {
+  background: white;
+  border-radius: 12px;
+  padding: 0.8rem;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.06);
+}
+
+#network {
+  width: 100%;
+  height: 380px;
+}
+
+.controls {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.95rem;
+  gap: 0.35rem;
+}
+
+input {
+  height: 40px;
+  border-radius: 8px;
+  border: 1px solid #cad3df;
+  padding: 0 0.75rem;
+  font-size: 1rem;
+}
+
+.buttons {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 0.7rem;
+}
+
+button {
+  border: none;
+  border-radius: 8px;
+  height: 40px;
+  padding: 0 1rem;
+  cursor: pointer;
+  font-weight: 600;
+  background: #2063dd;
+  color: #fff;
+}
+
+button:last-child {
+  background: #0d8f5f;
+}
+
+.result,
+.leaderboard {
+  margin-top: 1rem;
+  background: #fff;
+  border-radius: 12px;
+  padding: 0.8rem 1rem;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.06);
+}
+
+.leaderboard ul {
+  margin: 0;
+  padding-left: 1rem;
+}
+
+.node {
+  fill: #e6efff;
+  stroke: #3a66b6;
+  stroke-width: 2;
+}
+
+.node-text {
+  font-weight: 700;
+  fill: #16356c;
+}
+
+.edge {
+  stroke: #7b8ba0;
+  stroke-width: 2;
+  marker-end: url(#arrow);
+}
+
+.cap-label {
+  fill: #24364b;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.cap-label-bg {
+  fill: #ffffff;
+  opacity: 0.9;
+}
+
+@media (max-width: 720px) {
+  .controls {
+    grid-template-columns: 1fr;
+  }
+}
