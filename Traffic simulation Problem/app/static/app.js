@@ -48,6 +48,20 @@ const resultBox = document.getElementById("resultBox");
 const playerNameInput = document.getElementById("playerName");
 const leaderboardList = document.getElementById("leaderboardList");
 
+function setResult(message, level = "warn", metrics = []) {
+  const chips = metrics.length
+    ? `<div class="metrics">${metrics.map((item) => `<span class="metric-chip">${item}</span>`).join("")}</div>`
+    : "";
+
+  resultBox.innerHTML = `
+    <div class="section-head">
+      <h2>Round Result</h2>
+    </div>
+    <p class="status-line ${level}">${message}</p>
+    ${chips}
+  `;
+}
+
 function drawGraph(capacities) {
   svg.innerHTML = `
     <defs>
@@ -127,63 +141,80 @@ async function loadLeaderboard() {
   leaderboardList.innerHTML = "";
 
   if (rows.length === 0) {
-    leaderboardList.innerHTML = "<li>No winners yet.</li>";
+    leaderboardList.innerHTML = '<li class="leaderboard-empty">No winners yet.</li>';
     return;
   }
 
-  rows.forEach((row) => {
+  rows.forEach((row, index) => {
     const li = document.createElement("li");
-    li.textContent = `${row.playerName} — ${row.wins} win(s)`;
+    li.className = "leaderboard-item";
+    li.innerHTML = `
+      <span><span class="leaderboard-rank">#${index + 1}</span> ${row.playerName}</span>
+      <strong>${row.wins} win(s)</strong>
+    `;
     leaderboardList.appendChild(li);
   });
 }
 
 async function startNewRound() {
-  const res = await fetch("/api/new-round", { method: "POST" });
-  const data = await res.json();
-  currentRoundId = data.roundId;
-  currentCaps = data.capacities;
-  drawGraph(currentCaps);
-  resultBox.textContent = `Round #${currentRoundId} started. Enter your max-flow guess.`;
-  answerInput.value = "";
+  newRoundBtn.disabled = true;
+  try {
+    const res = await fetch("/api/new-round", { method: "POST" });
+    const data = await res.json();
+    currentRoundId = data.roundId;
+    currentCaps = data.capacities;
+    drawGraph(currentCaps);
+    setResult(`Round #${currentRoundId} started. Enter your max-flow guess.`, "ok", ["Ready for answer"]);
+    answerInput.value = "";
+  } catch {
+    setResult("Could not start a new round right now.", "error");
+  } finally {
+    newRoundBtn.disabled = false;
+  }
 }
 
 async function submitAnswer() {
   if (!currentRoundId) {
-    resultBox.textContent = "Start a new round first.";
+    setResult("Start a new round first.", "warn");
     return;
   }
 
   const answer = Number(answerInput.value);
   if (Number.isNaN(answer)) {
-    resultBox.textContent = "Enter a valid number.";
+    setResult("Enter a valid number.", "warn");
     return;
   }
 
-  const res = await fetch("/api/submit", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      roundId: currentRoundId,
-      answer,
-      playerName: playerNameInput.value,
-    }),
-  });
+  submitBtn.disabled = true;
+  try {
+    const res = await fetch("/api/submit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        roundId: currentRoundId,
+        answer,
+        playerName: playerNameInput.value,
+      }),
+    });
 
-  const data = await res.json();
-  if (!res.ok) {
-    resultBox.textContent = data.error || "Submission failed.";
-    return;
+    const data = await res.json();
+    if (!res.ok) {
+      setResult(data.error || "Submission failed.", "error");
+      return;
+    }
+
+    setResult(`Result: ${String(data.result || "unknown").toUpperCase()}`, "ok", [
+      `Correct max flow: ${data.correctMaxFlow}`,
+      `Ford-Fulkerson: ${data.fordFulkersonMs} ms`,
+      `Edmonds-Karp: ${data.edmondsKarpMs} ms`,
+    ]);
+
+    await loadLeaderboard();
+  } catch {
+    setResult("Submission failed due to a network error.", "error");
+  } finally {
+    submitBtn.disabled = false;
   }
-
-  resultBox.innerHTML = `
-    <strong>Result:</strong> ${data.result.toUpperCase()}<br>
-    Correct max flow: ${data.correctMaxFlow}<br>
-    Ford-Fulkerson: ${data.fordFulkersonMs} ms<br>
-    Edmonds-Karp: ${data.edmondsKarpMs} ms
-  `;
-
-  await loadLeaderboard();
 }
 
 newRoundBtn.addEventListener("click", startNewRound);
