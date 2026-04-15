@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import Board from './components/Board';
-import SetupPanel from './components/SetupPanel';
 import StatusPanel from './components/StatusPanel';
 import {
     getPossibleMoves,
@@ -554,6 +553,13 @@ function App() {
                                 />
                             </label>
                             {playerNameError ? <p className="validation-message">{playerNameError}</p> : null}
+                            <label>
+                                Board Size
+                                <select value={boardSize} onChange={(event) => setBoardSize(Number(event.target.value) as BoardSize)}>
+                                    <option value={8}>8 × 8 (Easy)</option>
+                                    <option value={16}>16 × 16 (Hard)</option>
+                                </select>
+                            </label>
                             <div className="menu-actions">
                                 <button className="primary-button" type="button" onClick={enterGameFromMenu} disabled={!trimmedPlayerName}>
                                     Start Playing
