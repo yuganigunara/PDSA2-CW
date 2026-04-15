@@ -150,6 +150,7 @@ function App() {
     const [status, setStatus] = useState('Pick a start square, then press Start Tour or run the auto solver.');
     const [recentWinners, setRecentWinners] = useState<WinnerRecord[]>(() => readStoredWinners());
     const [showInstructions, setShowInstructions] = useState(false);
+    const [showSettings, setShowSettings] = useState(false);
     const animationRef = useRef<number | null>(null);
 
     const startPosition = createStartPosition(boardSize, parseBoardIndex(startRow), parseBoardIndex(startCol));
@@ -553,19 +554,12 @@ function App() {
                                 />
                             </label>
                             {playerNameError ? <p className="validation-message">{playerNameError}</p> : null}
-                            <label>
-                                Board size
-                                <select value={boardSize} onChange={(event) => setBoardSize(Number(event.target.value) as BoardSize)}>
-                                    <option value={8}>8 x 8</option>
-                                    <option value={16}>16 x 16</option>
-                                </select>
-                            </label>
                             <div className="menu-actions">
                                 <button className="primary-button" type="button" onClick={enterGameFromMenu} disabled={!trimmedPlayerName}>
                                     Start Playing
                                 </button>
                                 <button className="secondary-button" type="button" onClick={toggleLeaderboard}>
-                                    {showLeaderboard ? 'Hide Instructions' : 'Show Instructions'}
+                                    {showLeaderboard ? 'Hide Scores' : 'Show Scores'}
                                 </button>
                                 <button className="secondary-button" type="button" onClick={backToGameHubDashboard}>
                                     Back to Game Hub
@@ -640,16 +634,34 @@ function App() {
             <main className="page-shell">
                 <section className="clean-game-layout">
                     <div className="game-header">
-                        <div>
+                        <div className="game-title-section">
                             <h1>Knight's Tour</h1>
-                            <p className="game-status">{status}</p>
+                        </div>
+                        <div className="game-mode-selector">
+                            <button
+                                className={`mode-button ${mode === 'manual' ? 'active' : ''}`}
+                                type="button"
+                                onClick={() => setMode('manual')}
+                            >
+                                Manual
+                            </button>
+                            <button
+                                className={`mode-button ${mode === 'solver' ? 'active' : ''}`}
+                                type="button"
+                                onClick={() => setMode('solver')}
+                            >
+                                Auto Solver
+                            </button>
                         </div>
                         <div className="game-actions">
                             <button className="primary-button" type="button" onClick={startNewRound}>
-                                {mode === 'manual' ? 'Start Tour' : 'Generate Auto Tour'}
+                                {mode === 'manual' ? 'Start Tour' : 'Generate Tour'}
                             </button>
                             <button className="secondary-button" type="button" onClick={() => setShowInstructions(true)}>
                                 Instructions
+                            </button>
+                            <button className="secondary-button" type="button" onClick={() => setShowSettings(true)}>
+                                Settings
                             </button>
                             <button className="secondary-button" type="button" onClick={clearBoard}>
                                 Reset
@@ -662,27 +674,6 @@ function App() {
 
                     <div className="game-content">
                         <div className="board-section">
-                            <SetupPanel
-                                boardSize={boardSize}
-                                solver={solver}
-                                mode={mode}
-                                isSolving={isSolving}
-                                startRow={startRow}
-                                startCol={startCol}
-                                playerName={playerName}
-                                nodeLimit={nodeLimit}
-                                onBoardSizeChange={setBoardSize}
-                                onSolverChange={setSolver}
-                                onModeChange={setMode}
-                                onStartRowChange={setStartRow}
-                                onStartColChange={setStartCol}
-                                onPlayerNameChange={setPlayerName}
-                                onNodeLimitChange={setNodeLimit}
-                                onStartNewRound={startNewRound}
-                                onUndoMove={undoMove}
-                                onClearBoard={clearBoard}
-                            />
-
                             <section className="card board-card">
                                 <Board
                                     boardSize={boardSize}
@@ -779,6 +770,106 @@ function App() {
                         <div className="modal-actions">
                             <button className="primary-button" type="button" onClick={() => setShowInstructions(false)}>
                                 Got it
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            ) : null}
+
+            {showSettings ? (
+                <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+                    <div className="modal-card settings-modal">
+                        <div className="modal-header">
+                            <h2 id="settings-title">Game Settings</h2>
+                            <button
+                                className="close-button"
+                                type="button"
+                                onClick={() => setShowSettings(false)}
+                                aria-label="Close settings"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        <div className="settings-content">
+                            <div className="settings-group">
+                                <label>
+                                    <span className="setting-label">Board Size</span>
+                                    <select value={boardSize} onChange={(event) => setBoardSize(Number(event.target.value) as BoardSize)}>
+                                        <option value={8}>8 × 8 (Easy)</option>
+                                        <option value={16}>16 × 16 (Hard)</option>
+                                    </select>
+                                </label>
+                            </div>
+
+                            <div className="settings-group">
+                                <label>
+                                    <span className="setting-label">Solver Algorithm</span>
+                                    <select 
+                                        value={solver} 
+                                        onChange={(event) => setSolver(event.target.value as SolverMode)}
+                                        disabled={boardSize === 16}
+                                    >
+                                        <option value="warnsdorff">Warnsdorff Heuristic</option>
+                                        <option value="backtracking">Backtracking (8x8 only)</option>
+                                    </select>
+                                </label>
+                                {boardSize === 16 && <p className="setting-hint">Backtracking disabled for 16×16 boards (too slow)</p>}
+                            </div>
+
+                            <div className="settings-group">
+                                <label>
+                                    <span className="setting-label">Start Position</span>
+                                    <div className="position-inputs">
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            max={boardSize}
+                                            value={startRow}
+                                            onChange={(event) => setStartRow(event.target.value)}
+                                            placeholder="Row"
+                                        />
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            max={boardSize}
+                                            value={startCol}
+                                            onChange={(event) => setStartCol(event.target.value)}
+                                            placeholder="Col"
+                                        />
+                                    </div>
+                                </label>
+                            </div>
+
+                            <div className="settings-group">
+                                <label>
+                                    <span className="setting-label">Animation Speed: {speed}</span>
+                                    <input
+                                        type="range"
+                                        min="5"
+                                        max="120"
+                                        value={speed}
+                                        onChange={(event) => setSpeed(Number(event.target.value))}
+                                    />
+                                </label>
+                            </div>
+
+                            <div className="settings-group">
+                                <label>
+                                    <span className="setting-label">Node Limit (for Backtracking)</span>
+                                    <input
+                                        type="number"
+                                        value={nodeLimit}
+                                        onChange={(event) => setNodeLimit(event.target.value)}
+                                        placeholder="Node limit"
+                                    />
+                                </label>
+                                <p className="setting-hint">Default: 3,500,000. Lower values = faster but may not find solution</p>
+                            </div>
+                        </div>
+
+                        <div className="modal-actions">
+                            <button className="primary-button" type="button" onClick={() => setShowSettings(false)}>
+                                Done
                             </button>
                         </div>
                     </div>
