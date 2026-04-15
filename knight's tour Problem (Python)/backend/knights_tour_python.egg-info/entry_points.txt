@@ -1,0 +1,4 @@
+[console_scripts]
+knights-tour = knighttour.app:main
+knights-tour-api = knighttour.api:run_server
+knights-tour-gui = knighttour.gui:main

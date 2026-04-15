@@ -273,11 +273,302 @@ button {
     line-height: 1.6;
 }
 
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+}
+
+.close-button {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 1.6rem;
+    cursor: pointer;
+    padding: 0;
+    width: 2rem;
+    height: 2rem;
+    display: grid;
+    place-items: center;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.close-button:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text);
+}
+
+.instructions-modal {
+    max-width: 520px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.instructions-content {
+    display: grid;
+    gap: 16px;
+    margin: 0 0 18px;
+}
+
+.instruction-step {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 14px;
+    padding: 16px 18px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.step-number {
+    display: grid;
+    place-items: center;
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: 999px;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+    color: #06111f;
+    font-weight: 800;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.instruction-step strong {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 1rem;
+    color: var(--text);
+}
+
+.instruction-step p {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.6;
+}
+
 .modal-actions {
     margin-top: 18px;
     display: flex;
     justify-content: flex-end;
     gap: 10px;
+}
+
+.clean-game-layout {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    gap: 18px;
+    padding: 0;
+}
+
+.game-header {
+    background: rgba(11, 22, 40, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    padding: 18px 24px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 20px;
+    align-items: center;
+    backdrop-filter: blur(16px);
+}
+
+.game-title-section h1 {
+    margin: 0;
+    font-size: 1.6rem;
+    font-family: 'Space Grotesk', 'IBM Plex Sans', sans-serif;
+}
+
+.game-mode-selector {
+    display: flex;
+    gap: 8px;
+    justify-self: center;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 6px;
+}
+
+.mode-button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: capitalize;
+}
+
+.mode-button:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text);
+}
+
+.mode-button.active {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+    color: #06111f;
+    box-shadow: 0 4px 12px rgba(85, 207, 232, 0.3);
+}
+
+.game-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.game-actions button {
+    min-height: 38px;
+    padding: 8px 14px;
+    font-size: 0.85rem;
+}
+
+.game-content {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 18px;
+}
+
+.board-section {
+    display: grid;
+    gap: 14px;
+}
+
+.board-section .board-card {
+    padding: 0;
+    overflow: hidden;
+}
+
+.board-section .board-card > div:first-child {
+    padding: 24px;
+}
+
+.board-info {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    padding: 0 24px 20px;
+}
+
+.info-stat {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    padding: 14px;
+    text-align: center;
+}
+
+.info-stat span {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+}
+
+.info-stat strong {
+    display: block;
+    font-size: 1.3rem;
+    color: var(--text);
+}
+
+.legend {
+    padding: 16px 24px;
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    color: var(--muted);
+}
+
+.settings-modal {
+    max-width: 480px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.settings-content {
+    display: grid;
+    gap: 18px;
+    margin-bottom: 18px;
+}
+
+.settings-group {
+    display: grid;
+    gap: 8px;
+}
+
+.settings-group label {
+    display: grid;
+    gap: 8px;
+}
+
+.setting-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text);
+    text-transform: capitalize;
+}
+
+.settings-group select,
+.settings-group input[type="number"],
+.settings-group input[type="range"] {
+    width: 100%;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text);
+    padding: 10px 12px;
+    font-size: 0.9rem;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.settings-group select:hover,
+.settings-group input[type="number"]:hover,
+.settings-group input[type="range"]:hover {
+    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.07);
+}
+
+.settings-group select:focus,
+.settings-group input[type="number"]:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(85, 207, 232, 0.1);
+}
+
+.settings-group select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.position-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.position-inputs input {
+    width: 100%;
+}
+
+.setting-hint {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--muted);
+    line-height: 1.4;
 }
 
 .hero {
@@ -570,7 +861,7 @@ button {
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 0;
+    border: 1px solid rgba(0, 0, 0, 0.15);
     min-width: 0;
     min-height: 0;
     aspect-ratio: 1;
@@ -594,24 +885,24 @@ button {
 }
 
 .cell-visited {
-    box-shadow: inset 0 0 0 999px rgba(102, 115, 255, 0.13);
+    /* trail color removed */
 }
 
 .cell-legal {
-    outline: 2px solid rgba(143, 214, 79, 0.46);
+    outline: 2.5px solid rgba(77, 165, 0, 0.8);
     outline-offset: -2px;
 }
 
 .cell-current {
-    box-shadow: inset 0 0 0 999px rgba(255, 107, 136, 0.2);
+    box-shadow: inset 0 0 0 999px rgba(255, 60, 100, 0.45);
 }
 
 .cell-start {
-    box-shadow: inset 0 0 0 999px rgba(244, 185, 66, 0.22);
+    box-shadow: inset 0 0 0 999px rgba(220, 130, 0, 0.4);
 }
 
 .cell-start-preview {
-    box-shadow: inset 0 0 0 999px rgba(122, 224, 195, 0.15);
+    box-shadow: inset 0 0 0 999px rgba(122, 224, 195, 0.3);
 }
 
 .cell-label {
