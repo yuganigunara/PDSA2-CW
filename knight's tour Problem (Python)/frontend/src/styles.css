@@ -861,7 +861,7 @@ button {
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 0;
+    border: 1px solid rgba(0, 0, 0, 0.15);
     min-width: 0;
     min-height: 0;
     aspect-ratio: 1;
