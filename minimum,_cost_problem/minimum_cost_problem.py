@@ -110,3 +110,45 @@ def greedy_algorithm(cost_matrix):
             emp_done.add(e); task_done.add(t)
         if len(assign) == n: break
     return total, assign, time.perf_counter()-t0
+
+# unit tests
+class TestAlgorithms(unittest.TestCase):
+    def setUp(self):
+        self.m3 = np.array([[9,2,7],[3,6,3],[4,8,5]], dtype=float)
+        self.m4 = np.array([[9,2,7,8],[6,4,3,7],[5,8,1,8],[7,6,9,4]], dtype=float)
+    def test_hungarian_3x3(self):
+        c,_,_ = hungarian_algorithm(self.m3); self.assertAlmostEqual(c,9.0)
+    def test_hungarian_4x4(self):
+        c,_,_ = hungarian_algorithm(self.m4); self.assertAlmostEqual(c,13.0)
+    def test_hungarian_all_assigned(self):
+        n=10; m=np.random.randint(20,201,(n,n)).astype(float)
+        _,a,_=hungarian_algorithm(m)
+        self.assertEqual(len(set(x[0] for x in a)),n)
+        self.assertEqual(len(set(x[1] for x in a)),n)
+    def test_hungarian_speed(self):
+        m=np.random.randint(20,201,(100,100)).astype(float)
+        _,_,t=hungarian_algorithm(m); self.assertLess(t,5.0)
+    def test_greedy_all_assigned(self):
+        n=10; m=np.random.randint(20,201,(n,n)).astype(float)
+        _,a,_=greedy_algorithm(m)
+        self.assertEqual(len(set(x[0] for x in a)),n)
+        self.assertEqual(len(set(x[1] for x in a)),n)
+    def test_greedy_positive(self):
+        m=np.random.randint(20,201,(50,50)).astype(float)
+        c,_,_=greedy_algorithm(m); self.assertGreater(c,0)
+    def test_greedy_bound(self):
+        n=20; m=np.random.randint(20,201,(n,n)).astype(float)
+        c,_,_=greedy_algorithm(m); self.assertLessEqual(c,200*n)
+    def test_hungarian_leq_greedy(self):
+        for _ in range(5):
+            n=random.randint(5,30); m=np.random.randint(20,201,(n,n)).astype(float)
+            h,_,_=hungarian_algorithm(m); g,_,_=greedy_algorithm(m)
+            self.assertLessEqual(h,g+1e-6)
+    def test_single(self):
+        m=np.array([[42.0]]); h,_,_=hungarian_algorithm(m); self.assertEqual(h,42.0)
+    def test_uniform(self):
+        m=np.full((10,10),50.0); h,_,_=hungarian_algorithm(m); self.assertAlmostEqual(h,500.0)
+    def test_smoke_100(self):
+        m=np.random.randint(20,201,(100,100)).astype(float)
+        _,ha,_=hungarian_algorithm(m); _,ga,_=greedy_algorithm(m)
+        self.assertEqual(len(ha),100); self.assertEqual(len(ga),100)
