@@ -152,3 +152,86 @@ class TestAlgorithms(unittest.TestCase):
         m=np.random.randint(20,201,(100,100)).astype(float)
         _,ha,_=hungarian_algorithm(m); _,ga,_=greedy_algorithm(m)
         self.assertEqual(len(ha),100); self.assertEqual(len(ga),100)
+
+
+class App(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("Minimum Cost Task Assignment — PDSA CW")
+        self.geometry("1100x720")
+        self.minsize(900, 620)
+        self.configure(bg=BG_DARK)
+        self.round_number = 1
+        self._build_ui()
+        self._init_db_async()
+
+    def _init_db_async(self):
+        def task():
+            ok, msg = init_db()
+            self.after(0, lambda: self._on_db_ready(ok, msg))
+        threading.Thread(target=task, daemon=True).start()
+
+    def _on_db_ready(self, ok, msg):
+        if ok:
+            self._set_status("✅  MySQL connected  —  pdsa_game.game_rounds", GREEN)
+        else:
+            self._set_status(f"⚠  DB offline (no-save mode): {msg[:80]}", ACCENT2)
+
+    def _set_status(self, txt, colour=TEXT_SEC):
+        self.status_var.set(txt)
+        self.status_lbl.configure(fg=colour)
+
+
+    def _build_ui(self):
+        # ── Top header bar
+        hdr = tk.Frame(self, bg=BG_CARD, pady=10)
+        hdr.pack(fill="x")
+        tk.Label(hdr, text="◈  MINIMUM COST TASK ASSIGNMENT",
+                 font=FONT_HEAD, bg=BG_CARD, fg=ACCENT1).pack(side="left", padx=20)
+        tk.Label(hdr, text="PDSA Coursework",
+                 font=FONT_SMALL, bg=BG_CARD, fg=TEXT_SEC).pack(side="right", padx=20)
+
+        # ── Notebook tabs
+        style = ttk.Style(self)
+        style.theme_use("clam")
+        style.configure("TNotebook",        background=BG_DARK,  borderwidth=0)
+        style.configure("TNotebook.Tab",    background=BG_CARD2, foreground=TEXT_SEC,
+                        font=FONT_SUB, padding=[16,6])
+        style.map("TNotebook.Tab",
+                  background=[("selected", BG_CARD)],
+                  foreground=[("selected", ACCENT1)])
+        style.configure("TFrame", background=BG_DARK)
+        style.configure("Treeview",
+                        background=BG_CARD2, foreground=TEXT_PRI,
+                        fieldbackground=BG_CARD2, rowheight=24,
+                        font=FONT_MONO)
+        style.configure("Treeview.Heading",
+                        background=BG_CARD, foreground=ACCENT1,
+                        font=FONT_SUB)
+        style.map("Treeview", background=[("selected","#264f78")])
+
+        nb = ttk.Notebook(self)
+        nb.pack(fill="both", expand=True, padx=10, pady=(6,0))
+
+        self.tab_game    = ttk.Frame(nb)
+        self.tab_history = ttk.Frame(nb)
+        self.tab_tests   = ttk.Frame(nb)
+
+        nb.add(self.tab_game,    text="  🎮  Play Round  ")
+        nb.add(self.tab_history, text="  📊  History  ")
+        nb.add(self.tab_tests,   text="  🧪  Unit Tests  ")
+
+        self._build_game_tab()
+        self._build_history_tab()
+        self._build_tests_tab()
+
+        # ── Status bar
+        bar = tk.Frame(self, bg=BG_CARD, pady=4)
+        bar.pack(fill="x", side="bottom")
+        self.status_var = tk.StringVar(value="⏳  Connecting to MySQL...")
+        self.status_lbl = tk.Label(bar, textvariable=self.status_var,
+                                   font=FONT_SMALL, bg=BG_CARD, fg=TEXT_SEC)
+        self.status_lbl.pack(side="left", padx=12)
+        tk.Label(bar, text="Hungarian  =  O(n³)   |   Greedy  =  O(n² log n)",
+                 font=FONT_SMALL, bg=BG_CARD, fg=TEXT_SEC).pack(side="right", padx=12)
+        
