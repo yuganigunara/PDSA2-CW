@@ -280,6 +280,91 @@ button {
     gap: 10px;
 }
 
+.clean-game-layout {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    gap: 18px;
+    padding: 0;
+}
+
+.game-header {
+    background: rgba(11, 22, 40, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    padding: 20px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    backdrop-filter: blur(16px);
+}
+
+.game-header h1 {
+    margin: 0;
+    font-size: 1.8rem;
+    font-family: 'Space Grotesk', 'IBM Plex Sans', sans-serif;
+}
+
+.game-status {
+    margin: 6px 0 0;
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+.game-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.game-actions button {
+    min-height: 38px;
+    padding: 8px 14px;
+    font-size: 0.85rem;
+}
+
+.game-content {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(280px, auto);
+    gap: 18px;
+}
+
+.board-section {
+    display: grid;
+    gap: 18px;
+}
+
+.board-info {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 14px;
+}
+
+.info-stat {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    padding: 12px;
+    text-align: center;
+}
+
+.info-stat span {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+}
+
+.info-stat strong {
+    display: block;
+    font-size: 1.3rem;
+    color: var(--text);
+}
+
 .hero {
     display: grid;
     grid-template-columns: 1.25fr 0.95fr;
@@ -594,7 +679,7 @@ button {
 }
 
 .cell-visited {
-    box-shadow: inset 0 0 0 999px rgba(102, 115, 255, 0.13);
+    /* trail color removed */
 }
 
 .cell-legal {

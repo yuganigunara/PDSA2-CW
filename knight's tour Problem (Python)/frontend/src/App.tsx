@@ -564,7 +564,7 @@ function App() {
                                     Start Playing
                                 </button>
                                 <button className="secondary-button" type="button" onClick={toggleLeaderboard}>
-                                    {showLeaderboard ? 'Hide Player Scores' : 'Show Player Scores'}
+                                    {showLeaderboard ? 'Hide Instructions' : 'Show Instructions'}
                                 </button>
                                 <button className="secondary-button" type="button" onClick={backToGameHubDashboard}>
                                     Back to Game Hub
@@ -637,130 +637,99 @@ function App() {
             <div className="ambient ambient-right" />
 
             <main className="page-shell">
-                <section className="hero card">
-                    <div>
-                        <img className="hero-knight-icon" src={knightIcon} alt="Knight icon" />
-                        <p className="eyebrow">React Knight's Tour</p>
-                        <h1>A calmer, clearer way to play the Knight's Tour.</h1>
-                        <p className="hero-copy">
-                            Start with one square, then either follow the legal moves yourself or let the solver animate a full tour.
-                            The board stays front and center, and the advanced options stay out of your way.
-                        </p>
-
-                        <div className="hero-actions">
+                <section className="clean-game-layout">
+                    <div className="game-header">
+                        <div>
+                            <h1>Knight's Tour</h1>
+                            <p className="game-status">{status}</p>
+                        </div>
+                        <div className="game-actions">
                             <button className="primary-button" type="button" onClick={startNewRound}>
                                 {mode === 'manual' ? 'Start Tour' : 'Generate Auto Tour'}
                             </button>
+                            <button className="secondary-button" type="button" onClick={undoMove} disabled={mode !== 'manual' || manualPath.length <= 1}>
+                                Undo
+                            </button>
                             <button className="secondary-button" type="button" onClick={clearBoard}>
-                                Reset Board
+                                Reset
                             </button>
                             <button className="secondary-button" type="button" onClick={backToMenu}>
-                                Back to Menu
+                                Menu
                             </button>
                         </div>
                     </div>
 
-                    <div className="hero-guide">
-                        {GUIDE_STEPS.map((step, index) => (
-                            <article key={step.title} className="guide-step">
-                                <span>{index + 1}</span>
-                                <div>
-                                    <strong>{step.title}</strong>
-                                    <p>{step.text}</p>
-                                </div>
-                            </article>
-                        ))}
-                    </div>
-                </section>
+                    <div className="game-content">
+                        <div className="board-section">
+                            <SetupPanel
+                                boardSize={boardSize}
+                                solver={solver}
+                                mode={mode}
+                                isSolving={isSolving}
+                                startRow={startRow}
+                                startCol={startCol}
+                                playerName={playerName}
+                                nodeLimit={nodeLimit}
+                                onBoardSizeChange={setBoardSize}
+                                onSolverChange={setSolver}
+                                onModeChange={setMode}
+                                onStartRowChange={setStartRow}
+                                onStartColChange={setStartCol}
+                                onPlayerNameChange={setPlayerName}
+                                onNodeLimitChange={setNodeLimit}
+                                onStartNewRound={startNewRound}
+                                onUndoMove={undoMove}
+                                onClearBoard={clearBoard}
+                            />
 
-                <section className="workspace-grid">
-                    <div className="main-column">
-                        <SetupPanel
-                            boardSize={boardSize}
-                            solver={solver}
-                            mode={mode}
-                            isSolving={isSolving}
-                            startRow={startRow}
-                            startCol={startCol}
-                            playerName={playerName}
-                            nodeLimit={nodeLimit}
-                            onBoardSizeChange={setBoardSize}
-                            onSolverChange={setSolver}
-                            onModeChange={setMode}
-                            onStartRowChange={setStartRow}
-                            onStartColChange={setStartCol}
-                            onPlayerNameChange={setPlayerName}
-                            onNodeLimitChange={setNodeLimit}
-                            onStartNewRound={startNewRound}
-                            onUndoMove={undoMove}
-                            onClearBoard={clearBoard}
-                        />
+                            <section className="card board-card">
+                                <Board
+                                    boardSize={boardSize}
+                                    mode={mode}
+                                    startPosition={startPosition}
+                                    activePath={activePath}
+                                    currentPosition={currentPosition}
+                                    legalMoves={legalMoves}
+                                    manualPathLength={manualPath.length}
+                                    onCellClick={handleCellClick}
+                                />
 
-                        <section className="card board-card">
-                            <div className="section-head board-head">
-                                <div>
-                                    <p className="card-kicker">Board</p>
-                                    <h2>{mode === 'manual' ? 'Click the glowing squares' : 'Watch the route animate'}</h2>
-                                    <p className="board-note">
-                                        {mode === 'manual'
-                                            ? 'If you have not started yet, click any square on the board to set the start instantly.'
-                                            : 'The board is animated step by step so the whole tour is easy to follow.'}
-                                    </p>
-                                </div>
-
-                                <div className="board-meta">
-                                    <div>
-                                        <span>Current square</span>
+                                <div className="board-info">
+                                    <div className="info-stat">
+                                        <span>Current</span>
                                         <strong>{positionLabel(currentPosition)}</strong>
                                     </div>
-                                    <div>
+                                    <div className="info-stat">
                                         <span>Coverage</span>
                                         <strong>{Math.round(currentCoverage * 100)}%</strong>
                                     </div>
-                                    <label className="speed-control">
-                                        Speed
-                                        <input
-                                            type="range"
-                                            min="5"
-                                            max="120"
-                                            value={speed}
-                                            onChange={(event) => setSpeed(Number(event.target.value))}
-                                        />
-                                    </label>
+                                    <div className="info-stat">
+                                        <span>Moves</span>
+                                        <strong>{activePath.length}</strong>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <Board
-                                boardSize={boardSize}
-                                mode={mode}
-                                startPosition={startPosition}
-                                activePath={activePath}
-                                currentPosition={currentPosition}
-                                legalMoves={legalMoves}
-                                manualPathLength={manualPath.length}
-                                onCellClick={handleCellClick}
-                            />
+                                <div className="legend">
+                                    <span><i className="legend-start" /> Start</span>
+                                    <span><i className="legend-current" /> Current</span>
+                                    <span><i className="legend-legal" /> Legal move</span>
+                                    <span><i className="legend-visited" /> Visited</span>
+                                </div>
+                            </section>
+                        </div>
 
-                            <div className="legend">
-                                <span><i className="legend-start" /> Start</span>
-                                <span><i className="legend-current" /> Current</span>
-                                <span><i className="legend-legal" /> Legal move</span>
-                                <span><i className="legend-visited" /> Visited</span>
-                            </div>
-                        </section>
+                        <StatusPanel
+                            status={status}
+                            roundResult={roundResult}
+                            currentPosition={currentPosition}
+                            currentCoverage={currentCoverage}
+                            isComplete={isComplete}
+                            legalMovesLength={legalMoves.length}
+                            startPosition={startPosition}
+                            activePath={activePath}
+                            recentWinners={recentWinners}
+                        />
                     </div>
-
-                    <StatusPanel
-                        status={status}
-                        roundResult={roundResult}
-                        currentPosition={currentPosition}
-                        currentCoverage={currentCoverage}
-                        isComplete={isComplete}
-                        legalMovesLength={legalMoves.length}
-                        startPosition={startPosition}
-                        activePath={activePath}
-                        recentWinners={recentWinners}
-                    />
                 </section>
             </main>
 
