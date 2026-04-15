@@ -149,6 +149,7 @@ function App() {
     const [recentScores, setRecentScores] = useState<RoundScoreView[]>([]);
     const [status, setStatus] = useState('Pick a start square, then press Start Tour or run the auto solver.');
     const [recentWinners, setRecentWinners] = useState<WinnerRecord[]>(() => readStoredWinners());
+    const [showInstructions, setShowInstructions] = useState(false);
     const animationRef = useRef<number | null>(null);
 
     const startPosition = createStartPosition(boardSize, parseBoardIndex(startRow), parseBoardIndex(startCol));
@@ -647,8 +648,8 @@ function App() {
                             <button className="primary-button" type="button" onClick={startNewRound}>
                                 {mode === 'manual' ? 'Start Tour' : 'Generate Auto Tour'}
                             </button>
-                            <button className="secondary-button" type="button" onClick={undoMove} disabled={mode !== 'manual' || manualPath.length <= 1}>
-                                Undo
+                            <button className="secondary-button" type="button" onClick={() => setShowInstructions(true)}>
+                                Instructions
                             </button>
                             <button className="secondary-button" type="button" onClick={clearBoard}>
                                 Reset
@@ -744,6 +745,40 @@ function App() {
                             </button>
                             <button className="primary-button" type="button" onClick={confirmBackToMenu}>
                                 Leave Round
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            ) : null}
+
+            {showInstructions ? (
+                <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="instructions-title">
+                    <div className="modal-card instructions-modal">
+                        <div className="modal-header">
+                            <h2 id="instructions-title">How to Play</h2>
+                            <button
+                                className="close-button"
+                                type="button"
+                                onClick={() => setShowInstructions(false)}
+                                aria-label="Close instructions"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        <div className="instructions-content">
+                            {GUIDE_STEPS.map((step, index) => (
+                                <article key={step.title} className="instruction-step">
+                                    <span className="step-number">{index + 1}</span>
+                                    <div>
+                                        <strong>{step.title}</strong>
+                                        <p>{step.text}</p>
+                                    </div>
+                                </article>
+                            ))}
+                        </div>
+                        <div className="modal-actions">
+                            <button className="primary-button" type="button" onClick={() => setShowInstructions(false)}>
+                                Got it
                             </button>
                         </div>
                     </div>

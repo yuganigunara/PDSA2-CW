@@ -273,6 +273,81 @@ button {
     line-height: 1.6;
 }
 
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+}
+
+.close-button {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 1.6rem;
+    cursor: pointer;
+    padding: 0;
+    width: 2rem;
+    height: 2rem;
+    display: grid;
+    place-items: center;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.close-button:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text);
+}
+
+.instructions-modal {
+    max-width: 520px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.instructions-content {
+    display: grid;
+    gap: 16px;
+    margin: 0 0 18px;
+}
+
+.instruction-step {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 14px;
+    padding: 16px 18px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.step-number {
+    display: grid;
+    place-items: center;
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: 999px;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+    color: #06111f;
+    font-weight: 800;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.instruction-step strong {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 1rem;
+    color: var(--text);
+}
+
+.instruction-step p {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.6;
+}
+
 .modal-actions {
     margin-top: 18px;
     display: flex;
