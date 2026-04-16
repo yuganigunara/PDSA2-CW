@@ -1,6 +1,6 @@
 from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parents[2]
 DB_PATH = BASE_DIR / "traffic_game.db"
 DRAW_MARGIN = 2
 
@@ -14,10 +14,8 @@ EDGES = [
     ("C", "E"),
     ("C", "F"),
     ("D", "F"),
-    ("D", "H"),
     ("E", "G"),
     ("E", "H"),
-    ("F", "G"),
     ("F", "H"),
     ("G", "T"),
     ("H", "T"),

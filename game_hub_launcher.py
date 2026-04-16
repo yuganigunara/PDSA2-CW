@@ -29,7 +29,7 @@ DEFAULT_GAMES = [
         "needs_src_path": False,
     },
     {
-        "name": "Traffic Simulation",
+        "name": "Traffic simulation Problem",
         "cwd": "Traffic simulation Problem",
         "command": ["{python}", "run.py"],
         "enabled": True,
