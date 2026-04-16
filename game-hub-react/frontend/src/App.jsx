@@ -95,6 +95,10 @@ function App() {
         const name = String(game?.name || "").toLowerCase();
         const command = (game?.command || []).join(" ").toLowerCase();
 
+        if (name.includes("traffic") || command.includes("traffic simulation") || command.includes("run.py")) {
+            return "http://127.0.0.1:5000/";
+        }
+
         if (name.includes("studio") || command.includes("run_studio.py")) {
             return "http://localhost:5173/";
         }
@@ -121,17 +125,6 @@ function App() {
         setLastPlayedIndex(index);
         window.localStorage.setItem("gameHub:lastPlayedIndex", String(index));
 
-        const quickUrl = getQuickLaunchUrl(game);
-        if (quickUrl) {
-            const popup = window.open(quickUrl, "_blank");
-            if (!popup) {
-                setNotice(`Popup blocked. Open this game manually: ${quickUrl}`);
-                setLaunchingIndex(-1);
-                return;
-            }
-            setNotice(`Launching ${gameName}...`);
-        }
-
         fetch(`${API_BASE}/games/${index}/launch`, {
             method: "POST",
         })
@@ -142,6 +135,12 @@ function App() {
                 }
                 setNotice(`${data.message} (PID: ${data.pid})`);
                 setLaunchingIndex(-1);
+
+                const quickUrl = getQuickLaunchUrl(game);
+                if (quickUrl) {
+                    // Keep navigation in the current tab so Back returns to the hub tab naturally.
+                    window.location.assign(`${quickUrl}?fromHub=1`);
+                }
             })
             .catch((launchError) => {
                 setError(launchError.message);
@@ -247,7 +246,7 @@ function App() {
                     </button>
                     <button
                         className="tab-btn logs-btn"
-                        onClick={() => window.open("/logs", "_blank")}
+                        onClick={() => window.open("/logs.html", "_blank")}
                     >
                         📊 View Logs
                     </button>

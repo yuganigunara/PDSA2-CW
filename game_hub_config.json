@@ -20,7 +20,7 @@
         "needs_src_path": false
     },
     {
-        "name": "Traffic Simulation",
+        "name": "Traffic simulation Problem",
         "cwd": "Traffic simulation Problem",
         "command": [
             "{python}",
