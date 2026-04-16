@@ -11,7 +11,6 @@ from .storage import get_round_scores, get_winners, save_round_score, save_winne
 
 app = Flask(__name__)
 CORS(app, origins=["http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:5176"])
-ALLOWED_BOARD_SIZES = {8, 16}
 
 
 def _normalize_path(path: Any) -> list[tuple[int, int]]:
@@ -48,7 +47,7 @@ def solve():
     node_limit = data.get("nodeLimit", 3_500_000)
     
     # Validate inputs
-    if size not in ALLOWED_BOARD_SIZES:
+    if size not in [4, 6, 8, 16]:
         return jsonify({"error": "Invalid board size"}), 400
     if solver not in ["warnsdorff", "backtracking"]:
         return jsonify({"error": "Invalid solver"}), 400
@@ -94,29 +93,24 @@ def add_winner():
 
     path = _normalize_path(data.get("path", []))
     sequence = [_format_square(row, col) for row, col in path]
+    start = sequence[0] if sequence else str(data.get("start", "(1, 1)"))
 
     try:
         size = int(data.get("size", 8))
     except (TypeError, ValueError):
         return jsonify({"error": "Invalid board size"}), 400
 
-    if size not in ALLOWED_BOARD_SIZES:
-        return jsonify({"error": "Invalid board size"}), 400
-
-    if not path:
-        return jsonify({"error": "Path is required and cannot be empty"}), 400
-
-    positions = [Position(row, col) for row, col in path]
-    start_position = positions[0]
-    report = validate_path(size, positions, start_position)
-    if not report.valid:
-        return jsonify({"error": f"Invalid winner path: {report.reason}"}), 400
+    path_length_raw = data.get("pathLength", data.get("moves", len(path)))
+    try:
+        path_length = int(path_length_raw)
+    except (TypeError, ValueError):
+        path_length = len(path)
 
     winner = {
         "player": data.get("player", "Anonymous"),
         "size": size,
-        "start": start_position.label(),
-        "pathLength": len(positions),
+        "start": start,
+        "pathLength": path_length,
         "sequence": sequence,
         "timestamp": datetime.now().isoformat(),
     }
@@ -146,9 +140,6 @@ def add_score():
     try:
         size = int(data.get("size", 8))
     except (TypeError, ValueError):
-        return jsonify({"error": "Invalid board size"}), 400
-
-    if size not in ALLOWED_BOARD_SIZES:
         return jsonify({"error": "Invalid board size"}), 400
 
     try:
