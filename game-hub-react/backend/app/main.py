@@ -31,7 +31,7 @@ DEFAULT_GAMES = [
         "needs_src_path": False,
     },
     {
-        "name": "Traffic Simulation",
+        "name": "Traffic simulation Problem",
         "cwd": "Traffic simulation Problem",
         "command": ["{python}", "run.py"],
         "enabled": True,
@@ -226,6 +226,10 @@ def launch_game(index: int) -> dict[str, Any]:
     command = [part.replace("{python}", sys.executable) for part in command]
 
     env = dict(os.environ)
+    # Prevent run_studio.py from opening an extra browser tab when launched from Game Hub.
+    if any("run_studio.py" in str(part).lower() for part in command):
+        env["GAME_HUB_LAUNCH"] = "1"
+
     python_paths: list[str] = [str(cwd)]
     if game.get("needs_src_path"):
         python_paths.append(str(cwd / "src"))
