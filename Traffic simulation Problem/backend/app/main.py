@@ -6,9 +6,9 @@ import logging
 
 from flask import Flask, jsonify, render_template, request
 
-from backend.app.algorithms import edmonds_karp_max_flow, ford_fulkerson_max_flow
-from backend.app.config import DB_PATH, DRAW_MARGIN, EDGES
-from backend.app.storage import get_leaderboard, get_round, init_db, save_round, save_win
+from .algorithms import edmonds_karp_max_flow, ford_fulkerson_max_flow
+from .config import DB_PATH, DRAW_MARGIN, EDGES
+from .storage import get_leaderboard, get_round, init_db, save_round, save_win
 
 FRONTEND_DIR = Path(__file__).resolve().parents[2] / "frontend"
 
