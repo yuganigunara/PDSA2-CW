@@ -97,3 +97,81 @@ def greedy_algorithm(cost_matrix: list[list[float]]) -> tuple[list[int], float, 
 
     elapsed_ms = (time.perf_counter() - start) * 1000
     return assignment, round(total_cost, 2), round(elapsed_ms, 4)
+
+class GameRequest(BaseModel):
+    n: Optional[int] = None  # if None, random between 50–100
+
+
+class GameResult(BaseModel):
+    round_id: int
+    n: int
+    hungarian_assignment: list[int]
+    hungarian_cost: float
+    hungarian_time_ms: float
+    greedy_assignment: list[int]
+    greedy_cost: float
+    greedy_time_ms: float
+    winner: str
+    cost_matrix_preview: list[list[float]]  # first 5x5 for display
+
+
+@app.get("/")
+def root():
+    return {"message": "Minimum Cost Assignment Game API"}
+
+
+@app.post("/api/game/play", response_model=GameResult)
+def play_game(req: GameRequest):
+   
+    n = req.n if req.n and 50 <= req.n <= 100 else random.randint(50, 100)
+
+    # Generate random cost matrix
+    cost_matrix = [
+        [round(random.uniform(20, 200), 2) for _ in range(n)]
+        for _ in range(n)
+    ]
+
+    # Run algorithms
+    h_assign, h_cost, h_time = hungarian_algorithm(cost_matrix)
+    g_assign, g_cost, g_time = greedy_algorithm(cost_matrix)
+
+    winner = "Hungarian" if h_cost <= g_cost else "Greedy"
+
+    # Persist to DB
+    conn = get_db()
+    cursor = conn.execute(
+        """INSERT INTO game_rounds
+           (n, cost_matrix, hungarian_assignment, hungarian_cost, hungarian_time_ms,
+            greedy_assignment, greedy_cost, greedy_time_ms, winner)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (
+            n,
+            json.dumps(cost_matrix),
+            json.dumps(h_assign),
+            h_cost,
+            h_time,
+            json.dumps(g_assign),
+            g_cost,
+            g_time,
+            winner,
+        ),
+    )
+    round_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+
+    # Return first 5x5 preview of cost matrix
+    preview = [row[:5] for row in cost_matrix[:5]]
+
+    return GameResult(
+        round_id=round_id,
+        n=n,
+        hungarian_assignment=h_assign,
+        hungarian_cost=h_cost,
+        hungarian_time_ms=h_time,
+        greedy_assignment=g_assign,
+        greedy_cost=g_cost,
+        greedy_time_ms=g_time,
+        winner=winner,
+        cost_matrix_preview=preview,
+    )
