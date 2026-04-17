@@ -38,10 +38,10 @@ DEFAULT_GAMES = [
         "needs_src_path": False,
     },
     {
-        "name": "Game Slot 4",
-        "cwd": "",
-        "command": [],
-        "enabled": False,
+        "name": "Sixteen Queens (Branch)",
+        "cwd": "sixteen queens",
+        "command": ["explorer", "."],
+        "enabled": True,
         "needs_src_path": False,
     },
     {
