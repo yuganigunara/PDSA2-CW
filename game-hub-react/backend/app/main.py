@@ -17,9 +17,9 @@ CONFIG_PATH = ROOT_DIR / "game_hub_config.json"
 
 DEFAULT_GAMES = [
     {
-        "name": "Snake and Ladder",
+        "name": "snake_ladder",
         "cwd": "snake",
-        "command": ["{python}", "main.py"],
+        "command": ["{python}", "run_snake_ladder.py"],
         "enabled": True,
         "needs_src_path": False,
     },
@@ -240,6 +240,16 @@ def launch_game(index: int) -> dict[str, Any]:
 
     creationflags = 0
 
+    game_name = str(game.get("name", "")).lower()
+    command_text = " ".join(str(part).lower() for part in command)
+    web_url = None
+    if "run_studio.py" in command_text or "studio" in game_name:
+        web_url = "http://localhost:5173/"
+    elif cwd_rel.lower() == "traffic simulation problem" or (
+        "run.py" in command_text and "traffic" in game_name
+    ):
+        web_url = "http://127.0.0.1:5000/"
+
     debug_info = {
         "python_exe": sys.executable,
         "cwd": str(cwd),
@@ -258,13 +268,15 @@ def launch_game(index: int) -> dict[str, Any]:
             "message": f"Launched {game.get('name', 'game')}",
             "pid": process.pid,
             "resolved_command": command,
+            "web_url": web_url,
             "debug": debug_info,
         }
     except Exception as exc:
-        debug_info["error"] = str(exc)
-        return {
-            "message": "Launch failed",
-            "error": str(exc),
-            "debug": debug_info,
-            "pid": None,
-        }
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "message": "Launch failed",
+                "error": str(exc),
+                "debug": debug_info,
+            },
+        )

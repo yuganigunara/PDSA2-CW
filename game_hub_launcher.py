@@ -15,9 +15,9 @@ CONFIG_PATH = ROOT_DIR / "game_hub_config.json"
 
 DEFAULT_GAMES = [
     {
-        "name": "Snake and Ladder",
+        "name": "snake_ladder",
         "cwd": "snake",
-        "command": ["{python}", "main.py"],
+        "command": ["{python}", "run_snake_ladder.py"],
         "enabled": True,
         "needs_src_path": False,
     },

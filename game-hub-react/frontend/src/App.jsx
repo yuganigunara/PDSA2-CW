@@ -3,6 +3,28 @@ import { useEffect, useMemo, useState } from "react";
 
 const API_BASE = "http://127.0.0.1:8002/api";
 
+function delay(ms) {
+    return new Promise((resolve) => {
+        window.setTimeout(resolve, ms);
+    });
+}
+
+async function waitForHttpReady(url, timeoutMs = 25000) {
+    const deadline = Date.now() + timeoutMs;
+
+    while (Date.now() < deadline) {
+        try {
+            // no-cors lets us detect network reachability without requiring CORS headers.
+            await fetch(url, { method: "GET", mode: "no-cors", cache: "no-store" });
+            return true;
+        } catch {
+            await delay(700);
+        }
+    }
+
+    return false;
+}
+
 function App() {
     const [games, setGames] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -131,15 +153,30 @@ function App() {
             .then(async (response) => {
                 const data = await response.json();
                 if (!response.ok) {
-                    throw new Error(data.detail || "Launch failed");
+                    const detail = data?.detail;
+                    if (typeof detail === "string") {
+                        throw new Error(detail);
+                    }
+                    throw new Error(detail?.error || detail?.message || "Launch failed");
                 }
+
+                if (!data?.pid) {
+                    throw new Error("Launch failed: no process ID returned");
+                }
+
                 setNotice(`${data.message} (PID: ${data.pid})`);
                 setLaunchingIndex(-1);
 
-                const quickUrl = getQuickLaunchUrl(game);
+                const quickUrl = data?.web_url || getQuickLaunchUrl(game);
                 if (quickUrl) {
-                    // Keep navigation in the current tab so Back returns to the hub tab naturally.
-                    window.location.assign(`${quickUrl}?fromHub=1`);
+                    const ready = await waitForHttpReady(quickUrl);
+                    if (ready) {
+                        window.open(`${quickUrl}?fromHub=1`, "_blank", "noopener");
+                    } else {
+                        setNotice(
+                            `${data.message} (PID: ${data.pid}). Web UI is still starting; open ${quickUrl} manually in a few seconds.`
+                        );
+                    }
                 }
             })
             .catch((launchError) => {
