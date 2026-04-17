@@ -63,3 +63,37 @@ def hungarian_algorithm(cost_matrix: list[list[float]]) -> tuple[list[int], floa
     elapsed_ms = (time.perf_counter() - start) * 1000
     assignment = col_ind.tolist()
     return assignment, total_cost, round(elapsed_ms, 4)
+
+# Greedy Algorithm
+def greedy_algorithm(cost_matrix: list[list[float]]) -> tuple[list[int], float, float]:
+    """
+    Greedy Algorithm.
+    Assigns each task to the cheapest available employee iteratively.
+    Time complexity: O(n^2 log n)  — fast but sub-optimal.
+    Returns: (assignment list, total cost, elapsed ms)
+    """
+    start = time.perf_counter()
+    n = len(cost_matrix)
+    assignment = [-1] * n
+    assigned_employees = set()
+    total_cost = 0.0
+
+    pairs = [
+        (cost_matrix[task][emp], task, emp)
+        for task in range(n)
+        for emp in range(n)
+    ]
+    pairs.sort(key=lambda x: x[0])
+
+    assigned_tasks = set()
+    for cost, task, emp in pairs:
+        if task not in assigned_tasks and emp not in assigned_employees:
+            assignment[task] = emp
+            assigned_employees.add(emp)
+            assigned_tasks.add(task)
+            total_cost += cost
+        if len(assigned_tasks) == n:
+            break
+
+    elapsed_ms = (time.perf_counter() - start) * 1000
+    return assignment, round(total_cost, 2), round(elapsed_ms, 4)
