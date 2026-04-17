@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import socket
 import subprocess
 import sys
@@ -35,13 +36,14 @@ def launch_hidden(command: list[str], cwd: Path) -> None:
 def main() -> None:
     py_exe = sys.executable
 
-    if not is_port_open("127.0.0.1", 5000):
+    if not is_port_open("127.0.0.1", 5001):
         launch_hidden([py_exe, "run_api.py"], ROOT)
 
     if not is_port_open("127.0.0.1", 5173):
         launch_hidden(["cmd", "/c", "npm run dev -- --host localhost --port 5173"], FRONTEND)
 
-    webbrowser.open("http://localhost:5173/")
+    if os.environ.get("GAME_HUB_LAUNCH") != "1":
+        webbrowser.open("http://localhost:5173/")
 
 
 if __name__ == "__main__":

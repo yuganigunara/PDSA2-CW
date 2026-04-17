@@ -31,7 +31,7 @@ class KnightTourGUI(tk.Tk):
         self.turn_seconds_var = tk.StringVar(value="20")
         self.player1_var = tk.StringVar(value="Player 1")
         self.player2_var = tk.StringVar(value="Player 2")
-        self.save_var = tk.BooleanVar(value=False)
+        self.save_var = tk.BooleanVar(value=True)
         self.animate_var = tk.BooleanVar(value=True)
         self.speed_var = tk.IntVar(value=30)
         self.status_var = tk.StringVar(value="Ready. Choose mode, then start game or solver.")

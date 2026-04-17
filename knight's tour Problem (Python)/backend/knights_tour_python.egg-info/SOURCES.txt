@@ -12,5 +12,6 @@ backend/knighttour/api.py
 backend/knighttour/app.py
 backend/knighttour/gui.py
 backend/knighttour/storage.py
+tests/test_api.py
 tests/test_knight_algorithms.py
 tests/test_storage.py

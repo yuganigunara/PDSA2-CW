@@ -681,18 +681,7 @@ function App() {
                     <div className="game-content">
                         <div className="board-section">
                             <section className="card board-card">
-                                <Board
-                                    boardSize={boardSize}
-                                    mode={mode}
-                                    startPosition={startPosition}
-                                    activePath={activePath}
-                                    currentPosition={currentPosition}
-                                    legalMoves={legalMoves}
-                                    manualPathLength={manualPath.length}
-                                    onCellClick={handleCellClick}
-                                />
-
-                                <div className="board-info">
+                                <div className="board-hud">
                                     <div className="info-stat">
                                         <span>Current</span>
                                         <strong>{positionLabel(currentPosition)}</strong>
@@ -707,12 +696,28 @@ function App() {
                                     </div>
                                 </div>
 
+                                <Board
+                                    boardSize={boardSize}
+                                    mode={mode}
+                                    startPosition={startPosition}
+                                    activePath={activePath}
+                                    currentPosition={currentPosition}
+                                    legalMoves={legalMoves}
+                                    manualPathLength={manualPath.length}
+                                    onCellClick={handleCellClick}
+                                />
+
                                 <div className="legend">
                                     <span><i className="legend-start" /> Start</span>
                                     <span><i className="legend-current" /> Current</span>
                                     <span><i className="legend-legal" /> Legal move</span>
                                     <span><i className="legend-visited" /> Visited</span>
                                 </div>
+
+                                <p className="board-note">
+                                    Click a highlighted square to continue. The current square is marked with “You are here”,
+                                    and the move count above the board updates as you play.
+                                </p>
                             </section>
                         </div>
 
@@ -810,8 +815,8 @@ function App() {
                             <div className="settings-group">
                                 <label>
                                     <span className="setting-label">Solver Algorithm</span>
-                                    <select 
-                                        value={solver} 
+                                    <select
+                                        value={solver}
                                         onChange={(event) => setSolver(event.target.value as SolverMode)}
                                         disabled={boardSize === 16}
                                     >

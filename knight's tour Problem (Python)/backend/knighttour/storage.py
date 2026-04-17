@@ -5,7 +5,9 @@ import sqlite3
 from pathlib import Path
 from typing import Any
 
-DEFAULT_STORAGE_FILE = Path(".knights_tour.db")
+# Keep DB location stable regardless of where the process is launched from.
+# storage.py -> knighttour -> backend -> project root
+DEFAULT_STORAGE_FILE = Path(__file__).resolve().parents[2] / ".knights_tour.db"
 
 
 def _connect(storage_file: Path | str) -> sqlite3.Connection:
