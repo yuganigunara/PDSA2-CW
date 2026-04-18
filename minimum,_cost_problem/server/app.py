@@ -175,3 +175,119 @@ def play_game(req: GameRequest):
         winner=winner,
         cost_matrix_preview=preview,
     )
+
+@app.get("/api/game/history")
+def get_history(limit: int = 10):
+    # Fetch recent game rounds from the database (limited by 'limit')
+    conn = get_db()
+    rows = conn.execute(
+        """SELECT id, n, hungarian_cost, hungarian_time_ms,
+                  greedy_cost, greedy_time_ms, winner, played_at
+           FROM game_rounds ORDER BY id DESC LIMIT ?""",
+        (limit,),
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+@app.get("/api/game/round/{round_id}")
+def get_round(round_id: int):
+    # Retrieve full details of a specific round using its ID
+    conn = get_db()
+    row = conn.execute(
+        "SELECT * FROM game_rounds WHERE id = ?", (round_id,)
+    ).fetchone()
+    conn.close()
+
+    # Return error if the round does not exist
+    if not row:
+        raise HTTPException(status_code=404, detail="Round not found")
+
+    data = dict(row)
+
+    # Convert stored JSON strings back into usable Python lists
+    data["cost_matrix"] = json.loads(data["cost_matrix"])
+    data["hungarian_assignment"] = json.loads(data["hungarian_assignment"])
+    data["greedy_assignment"] = json.loads(data["greedy_assignment"])
+
+    return data
+
+
+@app.get("/api/game/stats")
+def get_stats():
+    # Generate overall statistics across all game rounds
+    conn = get_db()
+    stats = conn.execute(
+        """SELECT
+             COUNT(*) as total_rounds,
+             AVG(hungarian_cost) as avg_hungarian_cost,
+             AVG(greedy_cost) as avg_greedy_cost,
+             AVG(hungarian_time_ms) as avg_hungarian_time_ms,
+             AVG(greedy_time_ms) as avg_greedy_time_ms,
+             SUM(CASE WHEN winner='Hungarian' THEN 1 ELSE 0 END) as hungarian_wins,
+             SUM(CASE WHEN winner='Greedy' THEN 1 ELSE 0 END) as greedy_wins,
+             MIN(n) as min_n,
+             MAX(n) as max_n
+           FROM game_rounds"""
+    ).fetchone()
+    conn.close()
+
+    return dict(stats)
+
+@app.get("/api/game/history")
+def get_history(limit: int = 10):
+    # Fetch recent game rounds from the database (limited by 'limit')
+    conn = get_db()
+    rows = conn.execute(
+        """SELECT id, n, hungarian_cost, hungarian_time_ms,
+                  greedy_cost, greedy_time_ms, winner, played_at
+           FROM game_rounds ORDER BY id DESC LIMIT ?""",
+        (limit,),
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+@app.get("/api/game/round/{round_id}")
+def get_round(round_id: int):
+    # Retrieve full details of a specific round using its ID
+    conn = get_db()
+    row = conn.execute(
+        "SELECT * FROM game_rounds WHERE id = ?", (round_id,)
+    ).fetchone()
+    conn.close()
+
+    # Return error if the round does not exist
+    if not row:
+        raise HTTPException(status_code=404, detail="Round not found")
+
+    data = dict(row)
+
+    # Convert stored JSON strings back into usable Python lists
+    data["cost_matrix"] = json.loads(data["cost_matrix"])
+    data["hungarian_assignment"] = json.loads(data["hungarian_assignment"])
+    data["greedy_assignment"] = json.loads(data["greedy_assignment"])
+
+    return data
+
+
+@app.get("/api/game/stats")
+def get_stats():
+    # Generate overall statistics across all game rounds
+    conn = get_db()
+    stats = conn.execute(
+        """SELECT
+             COUNT(*) as total_rounds,
+             AVG(hungarian_cost) as avg_hungarian_cost,
+             AVG(greedy_cost) as avg_greedy_cost,
+             AVG(hungarian_time_ms) as avg_hungarian_time_ms,
+             AVG(greedy_time_ms) as avg_greedy_time_ms,
+             SUM(CASE WHEN winner='Hungarian' THEN 1 ELSE 0 END) as hungarian_wins,
+             SUM(CASE WHEN winner='Greedy' THEN 1 ELSE 0 END) as greedy_wins,
+             MIN(n) as min_n,
+             MAX(n) as max_n
+           FROM game_rounds"""
+    ).fetchone()
+    conn.close()
+
+    return dict(stats)
