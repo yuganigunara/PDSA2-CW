@@ -234,3 +234,92 @@ def get_stats():
 
     return dict(stats)
 
+# unit tests
+class TestAlgorithms(unittest.TestCase):
+
+    def setUp(self):
+        # small matrix with known optimal result
+        self.simple_matrix = [
+            [5, 1, 8],
+            [2, 7, 4],
+            [6, 3, 3],
+        ]
+
+    def test_hungarian_optimal_small(self):
+        # check hungarian works on small case
+        assignment, cost, _ = hungarian_algorithm(self.simple_matrix)
+        self.assertEqual(len(assignment), 3)
+        self.assertEqual(len(set(assignment)), 3, "each employee once")
+        self.assertAlmostEqual(cost, 6.0, places=1)
+
+    def test_greedy_valid_assignment(self):
+        # check greedy gives valid output
+        assignment, cost, _ = greedy_algorithm(self.simple_matrix)
+        self.assertEqual(len(assignment), 3)
+        self.assertEqual(len(set(assignment)), 3, "each employee once")
+        self.assertGreater(cost, 0)
+
+    def test_hungarian_beats_or_equals_greedy(self):
+        # compare hungarian and greedy performance on random data
+        for _ in range(20):
+            n = random.randint(5, 20)
+            matrix = [[random.uniform(20, 200) for _ in range(n)] for _ in range(n)]
+
+            _, h_cost, _ = hungarian_algorithm(matrix)
+            _, g_cost, _ = greedy_algorithm(matrix)
+
+            self.assertLessEqual(
+                round(h_cost, 2),
+                round(g_cost, 2),
+                f"hungarian ({h_cost}) <= greedy ({g_cost})",
+            )
+
+    def test_random_large_matrix(self):
+        # test with large input
+        n = 100
+        matrix = [[random.uniform(20, 200) for _ in range(n)] for _ in range(n)]
+
+        h_assign, h_cost, h_time = hungarian_algorithm(matrix)
+        g_assign, g_cost, g_time = greedy_algorithm(matrix)
+
+        self.assertEqual(len(h_assign), n)
+        self.assertEqual(len(g_assign), n)
+        self.assertGreater(h_time, 0)
+        self.assertGreater(g_time, 0)
+
+    def test_uniform_cost_matrix(self):
+        # test with all equal cost values
+        n = 4
+        matrix = [[50.0] * n for _ in range(n)]
+
+        h_assign, h_cost, _ = hungarian_algorithm(matrix)
+        g_assign, g_cost, _ = greedy_algorithm(matrix)
+
+        self.assertAlmostEqual(h_cost, 200.0)
+        self.assertAlmostEqual(g_cost, 200.0)
+
+    def test_assignment_uniqueness(self):
+        # ensure unique assignments (no duplicates)
+        for _ in range(10):
+            n = random.randint(10, 50)
+            matrix = [[random.uniform(20, 200) for _ in range(n)] for _ in range(n)]
+
+            h_assign, _, _ = hungarian_algorithm(matrix)
+            g_assign, _, _ = greedy_algorithm(matrix)
+
+            self.assertEqual(len(set(h_assign)), n)
+            self.assertEqual(len(set(g_assign)), n)
+
+    def test_cost_range(self):
+        # verify cost matches matrix values
+        n = 10
+        matrix = [[random.uniform(20, 200) for _ in range(n)] for _ in range(n)]
+
+        h_assign, h_cost, _ = hungarian_algorithm(matrix)
+        actual_cost = sum(matrix[task][h_assign[task]] for task in range(n))
+
+        self.assertAlmostEqual(h_cost, actual_cost, places=1)
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)
