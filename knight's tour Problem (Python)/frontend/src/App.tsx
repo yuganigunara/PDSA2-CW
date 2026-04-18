@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import Board from './components/Board';
 import StatusPanel from './components/StatusPanel';
