@@ -22,6 +22,30 @@ Or double-click:
 
 - `run_game_hub.bat`
 
+## Fresh clone setup (important)
+
+If you cloned this repository on a new machine, run setup first from workspace root:
+
+```powershell
+.\setup_game_hub.bat
+.\run_game_hub.bat
+```
+
+Note: On first launch after clone/zip, some game UIs can take 10 to 30 seconds to become ready while dependencies/build cache initialize.
+
+Prerequisites:
+
+- Python 3.10+
+- Node.js LTS (includes npm)
+
+What setup does:
+
+- Creates `E:/PDSAgame/.venv` if missing
+- Installs Game Hub backend dependencies
+- Installs Snake and Traffic Simulation dependencies
+- Installs Knight's Tour Python package
+- Installs both React frontends (`game-hub-react/frontend` and `knight's tour Problem (Python)/frontend`)
+
 ## How to add your 4th and 5th games
 
 1. Start the launcher.

@@ -2,23 +2,14 @@ import json
 import random
 import time
 from pathlib import Path
-import logging
 
 from flask import Flask, jsonify, render_template, request
 
-from backend.app.algorithms import edmonds_karp_max_flow, ford_fulkerson_max_flow
-from backend.app.config import DB_PATH, DRAW_MARGIN, EDGES
-from backend.app.storage import get_leaderboard, get_round, init_db, save_round, save_win
+from app.algorithms import edmonds_karp_max_flow, ford_fulkerson_max_flow
+from app.config import DB_PATH, DRAW_MARGIN, EDGES
+from app.storage import get_leaderboard, get_round, init_db, save_round, save_win
 
-FRONTEND_DIR = Path(__file__).resolve().parents[2] / "frontend"
-
-app = Flask(
-    __name__,
-    template_folder=str(FRONTEND_DIR / "templates"),
-    static_folder=str(FRONTEND_DIR / "static"),
-    static_url_path="/static",
-)
-LOGGER = logging.getLogger(__name__)
+app = Flask(__name__, template_folder="templates", static_folder="static")
 
 
 def _random_capacities():
@@ -56,20 +47,16 @@ def index():
 
 @app.post("/api/new-round")
 def new_round():
-    try:
-        capacities = _random_capacities()
-        correct, ff_ms, ek_ms = _timed_max_flow(capacities)
-        round_id = save_round(DB_PATH, capacities, correct, ff_ms, ek_ms)
+    capacities = _random_capacities()
+    correct, ff_ms, ek_ms = _timed_max_flow(capacities)
+    round_id = save_round(DB_PATH, capacities, correct, ff_ms, ek_ms)
 
-        return jsonify(
-            {
-                "roundId": round_id,
-                "capacities": capacities,
-            }
-        )
-    except Exception as exc:
-        LOGGER.exception("Failed to create new round")
-        return jsonify({"error": f"Could not start a new round: {exc}"}), 500
+    return jsonify(
+        {
+            "roundId": round_id,
+            "capacities": capacities,
+        }
+    )
 
 
 @app.post("/api/submit")
@@ -88,58 +75,77 @@ def submit_answer():
     except ValueError:
         return jsonify({"error": "roundId and answer must be integers"}), 400
 
-    if answer < 0:
-        return jsonify({"error": "answer must be a non-negative integer"}), 400
+    round_row = get_round(DB_PATH, round_id)
+    if not round_row:
+        return jsonify({"error": "Round not found"}), 404
 
-    if len(player_name) > 40:
-        return jsonify({"error": "playerName must be 40 characters or fewer"}), 400
+    correct = int(round_row["correct_max_flow"])
+    diff = abs(answer - correct)
 
-    try:
-        round_row = get_round(DB_PATH, round_id)
-        if not round_row:
-            return jsonify({"error": "Round not found"}), 404
+    if diff == 0:
+        result = "win"
+        if player_name:
+            save_win(DB_PATH, player_name, answer, round_id)
+    elif diff <= DRAW_MARGIN:
+        result = "draw"
+    else:
+        result = "lose"
 
-        correct = int(round_row["correct_max_flow"])
-        diff = abs(answer - correct)
-
-        if diff == 0:
-            result = "win"
-            if player_name:
-                save_win(DB_PATH, player_name, answer, round_id)
-        elif diff <= DRAW_MARGIN:
-            result = "draw"
-        else:
-            result = "lose"
-
-        return jsonify(
-            {
-                "result": result,
-                "correctMaxFlow": correct,
-                "fordFulkersonMs": round(round_row["ff_time_ms"], 4),
-                "edmondsKarpMs": round(round_row["ek_time_ms"], 4),
-            }
-        )
-    except Exception as exc:
-        LOGGER.exception("Failed to submit answer")
-        return jsonify({"error": f"Could not submit answer: {exc}"}), 500
+    return jsonify(
+        {
+            "result": result,
+            "correctMaxFlow": correct,
+            "fordFulkersonMs": round(round_row["ff_time_ms"], 4),
+            "edmondsKarpMs": round(round_row["ek_time_ms"], 4),
+        }
+    )
 
 
 @app.get("/api/leaderboard")
 def leaderboard():
-    try:
-        rows = get_leaderboard(DB_PATH)
-        return jsonify(
-            [
-                {
-                    "playerName": row["player_name"],
-                    "wins": row["wins"],
-                }
-                for row in rows
-            ]
-        )
-    except Exception as exc:
-        LOGGER.exception("Failed to fetch leaderboard")
-        return jsonify({"error": f"Could not load leaderboard: {exc}"}), 500
+    rows = get_leaderboard(DB_PATH)
+    return jsonify(
+        [
+            {
+                "playerName": row["player_name"],
+                "wins": row["wins"],
+            }
+            for row in rows
+        ]
+    )
+
+
+@app.get("/api/benchmark")
+def benchmark_algorithms():
+    rounds = request.args.get("rounds", default=20, type=int)
+    if rounds is None:
+        rounds = 20
+    rounds = max(1, min(rounds, 100))
+
+    round_labels = []
+    ff_times = []
+    ek_times = []
+
+    for i in range(1, rounds + 1):
+        capacities = _random_capacities()
+        _, ff_ms, ek_ms = _timed_max_flow(capacities)
+        round_labels.append(f"Round {i}")
+        ff_times.append(round(ff_ms, 4))
+        ek_times.append(round(ek_ms, 4))
+
+    ff_avg = round(sum(ff_times) / rounds, 4)
+    ek_avg = round(sum(ek_times) / rounds, 4)
+
+    return jsonify(
+        {
+            "rounds": rounds,
+            "labels": round_labels,
+            "fordFulkersonMs": ff_times,
+            "edmondsKarpMs": ek_times,
+            "averageFordFulkersonMs": ff_avg,
+            "averageEdmondsKarpMs": ek_avg,
+        }
+    )
 
 
 def create_app(db_path: Path = DB_PATH):

@@ -36,7 +36,7 @@ def launch_hidden(command: list[str], cwd: Path) -> None:
 def main() -> None:
     py_exe = sys.executable
 
-    if not is_port_open("127.0.0.1", 5000):
+    if not is_port_open("127.0.0.1", 5001):
         launch_hidden([py_exe, "run_api.py"], ROOT)
 
     if not is_port_open("127.0.0.1", 5173):

@@ -3,6 +3,28 @@ import { useEffect, useMemo, useState } from "react";
 
 const API_BASE = "http://127.0.0.1:8002/api";
 
+function delay(ms) {
+    return new Promise((resolve) => {
+        window.setTimeout(resolve, ms);
+    });
+}
+
+async function waitForHttpReady(url, timeoutMs = 25000) {
+    const deadline = Date.now() + timeoutMs;
+
+    while (Date.now() < deadline) {
+        try {
+            // no-cors lets us detect network reachability without requiring CORS headers.
+            await fetch(url, { method: "GET", mode: "no-cors", cache: "no-store" });
+            return true;
+        } catch {
+            await delay(700);
+        }
+    }
+
+    return false;
+}
+
 function App() {
     const [games, setGames] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -19,14 +41,10 @@ function App() {
         return raw ? Number(raw) : -1;
     });
 
-    const enabledCount = useMemo(
-        () => games.filter((game) => game.enabled).length,
-        [games]
-    );
-    const disabledCount = games.length - enabledCount;
+    const enabledCount = games.length;
     const filteredGames = useMemo(() => {
         return games
-            .map((game, index) => ({ game, index }))
+            .map((game) => ({ game, slotIndex: Number(game?.slotIndex ?? -1) }))
             .filter(({ game }) => {
                 const name = String(game?.name || "").toLowerCase();
                 const folder = String(game?.cwd || "").toLowerCase();
@@ -37,17 +55,9 @@ function App() {
                     return false;
                 }
 
-                if (statusFilter === "enabled") {
-                    return Boolean(game?.enabled);
-                }
-
-                if (statusFilter === "disabled") {
-                    return !Boolean(game?.enabled);
-                }
-
                 return true;
             });
-    }, [games, query, statusFilter]);
+    }, [games, query]);
 
     useEffect(() => {
         if (lastPlayedIndex < 0) {
@@ -69,7 +79,12 @@ function App() {
                 throw new Error("Failed to load games");
             }
             const data = await response.json();
-            setGames(Array.isArray(data.games) ? data.games : []);
+            const loadedGames = Array.isArray(data.games)
+                ? data.games
+                    .map((game, slotIndex) => ({ ...game, slotIndex }))
+                    .filter((game) => Boolean(game?.enabled))
+                : [];
+            setGames(loadedGames);
         } catch (fetchError) {
             setError(fetchError.message);
         } finally {
@@ -106,40 +121,55 @@ function App() {
         return "";
     }
 
-    async function launchGame(index) {
-        const game = games[index] || {};
-        const gameName = game?.name || `Game Slot ${index + 1}`;
+    async function launchGame(slotIndex) {
+        const game = games.find((item) => Number(item?.slotIndex) === Number(slotIndex)) || {};
+        const gameName = game?.name || `Game Slot ${Number(slotIndex) + 1}`;
 
-        if (!game?.enabled || !game?.cwd || !(game?.command || []).length) {
-            setError(`Slot ${index + 1} is not ready. Please configure it first.`);
+        if (!game?.cwd || !(game?.command || []).length) {
+            setError(`Slot ${Number(slotIndex) + 1} is not ready. Please configure it first.`);
             return;
         }
 
         setNotice("");
         setError("");
         setWelcome(`Welcome to ${gameName}`);
-        setActiveLaunchIndex(index);
-        setLaunchingIndex(index);
+        setActiveLaunchIndex(slotIndex);
+        setLaunchingIndex(slotIndex);
         setCelebrateTick((value) => value + 1);
         window.setTimeout(() => setActiveLaunchIndex(-1), 1700);
-        setLastPlayedIndex(index);
-        window.localStorage.setItem("gameHub:lastPlayedIndex", String(index));
+        setLastPlayedIndex(slotIndex);
+        window.localStorage.setItem("gameHub:lastPlayedIndex", String(slotIndex));
 
-        fetch(`${API_BASE}/games/${index}/launch`, {
+        fetch(`${API_BASE}/games/${slotIndex}/launch`, {
             method: "POST",
         })
             .then(async (response) => {
                 const data = await response.json();
                 if (!response.ok) {
-                    throw new Error(data.detail || "Launch failed");
+                    const detail = data?.detail;
+                    if (typeof detail === "string") {
+                        throw new Error(detail);
+                    }
+                    throw new Error(detail?.error || detail?.message || "Launch failed");
                 }
+
+                if (!data?.pid) {
+                    throw new Error("Launch failed: no process ID returned");
+                }
+
                 setNotice(`${data.message} (PID: ${data.pid})`);
                 setLaunchingIndex(-1);
 
-                const quickUrl = getQuickLaunchUrl(game);
+                const quickUrl = data?.web_url || getQuickLaunchUrl(game);
                 if (quickUrl) {
-                    // Keep navigation in the current tab so Back returns to the hub tab naturally.
-                    window.location.assign(`${quickUrl}?fromHub=1`);
+                    const ready = await waitForHttpReady(quickUrl);
+                    if (ready) {
+                        window.open(`${quickUrl}?fromHub=1`, "_blank", "noopener");
+                    } else {
+                        setNotice(
+                            `${data.message} (PID: ${data.pid}). Web UI is still starting; open ${quickUrl} manually in a few seconds.`
+                        );
+                    }
                 }
             })
             .catch((launchError) => {
@@ -152,7 +182,7 @@ function App() {
         if (!filteredGames.length) {
             return;
         }
-        launchGame(filteredGames[0].index);
+        launchGame(filteredGames[0].slotIndex);
     }
 
     function launchLastPlayed() {
@@ -180,11 +210,7 @@ function App() {
                 <div className="topbar-actions">
                     <div className="stat-badge">
                         <span>{enabledCount}</span>
-                        <small>enabled slots</small>
-                    </div>
-                    <div className="stat-badge muted-stat">
-                        <span>{disabledCount}</span>
-                        <small>waiting setup</small>
+                        <small>active games</small>
                     </div>
                     <button className="refresh-button" onClick={loadGames}>
                         Refresh
@@ -209,26 +235,7 @@ function App() {
                         }}
                         placeholder="Search game or folder..."
                     />
-                    <div className="filter-tabs">
-                        <button
-                            className={`tab-btn ${statusFilter === "all" ? "active" : ""}`}
-                            onClick={() => setStatusFilter("all")}
-                        >
-                            All
-                        </button>
-                        <button
-                            className={`tab-btn ${statusFilter === "enabled" ? "active" : ""}`}
-                            onClick={() => setStatusFilter("enabled")}
-                        >
-                            Enabled
-                        </button>
-                        <button
-                            className={`tab-btn ${statusFilter === "disabled" ? "active" : ""}`}
-                            onClick={() => setStatusFilter("disabled")}
-                        >
-                            Waiting Setup
-                        </button>
-                    </div>
+                    <div className="filter-tabs" />
                 </section>
 
                 <section className="quick-row">
@@ -239,7 +246,6 @@ function App() {
                         className="tab-btn"
                         onClick={() => {
                             setQuery("");
-                            setStatusFilter("all");
                         }}
                     >
                         Clear Filters
@@ -254,36 +260,31 @@ function App() {
                 </section>
 
                 <section className="grid">
-                    {filteredGames.map(({ game, index }) => (
+                    {filteredGames.map(({ game, slotIndex }) => (
                         <article
-                            className={`card ${activeLaunchIndex === index ? "card-launch" : ""}`}
-                            key={`${game.name}-${index}`}
-                            style={{ animationDelay: `${index * 70}ms` }}
+                            className={`card ${activeLaunchIndex === slotIndex ? "card-launch" : ""}`}
+                            key={`${game.name}-${slotIndex}`}
+                            style={{ animationDelay: `${slotIndex * 70}ms` }}
                         >
                             <div className="card-head">
-                                <h2>{game.name || `Game Slot ${index + 1}`}</h2>
-                                <span className={game.enabled ? "pill on" : "pill off"}>
-                                    {game.enabled ? "Enabled" : "Disabled"}
-                                </span>
+                                <h2>{game.name || `Game Slot ${slotIndex + 1}`}</h2>
+                                <span className="pill on">Enabled</span>
                             </div>
 
-                            <p className="slot-id">Slot {index + 1}</p>
+                            <p className="slot-id">Slot {slotIndex + 1}</p>
                             <p className="meta">Folder: {game.cwd || "not set"}</p>
                             <p className="meta">Command: {(game.command || []).join(" ") || "not set"}</p>
 
                             <div className="actions">
                                 <button
-                                    onClick={() => launchGame(index)}
+                                    onClick={() => launchGame(slotIndex)}
                                     disabled={
-                                        launchingIndex === index || !game.enabled || !game.cwd || !(game.command || []).length
+                                        launchingIndex === slotIndex || !game.cwd || !(game.command || []).length
                                     }
                                 >
-                                    {launchingIndex === index ? "Launching..." : game.enabled ? "Play Now" : "Setup Needed"}
+                                    {launchingIndex === slotIndex ? "Launching..." : "Play Now"}
                                 </button>
                             </div>
-                            {!game.enabled && (
-                                <p className="setup-hint">Enable this slot and set folder/command to launch.</p>
-                            )}
                         </article>
                     ))}
                 </section>
