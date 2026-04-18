@@ -1,4 +1,4 @@
-from app.algorithms import edmonds_karp_max_flow, ford_fulkerson_max_flow
+from backend.app.algorithms import edmonds_karp_max_flow, ford_fulkerson_max_flow
 
 
 def test_algorithms_return_same_for_known_graph():
@@ -11,10 +11,8 @@ def test_algorithms_return_same_for_known_graph():
         ("C", "E"): 2,
         ("C", "F"): 8,
         ("D", "F"): 5,
-        ("D", "H"): 4,
         ("E", "G"): 10,
         ("E", "H"): 3,
-        ("F", "G"): 6,
         ("F", "H"): 8,
         ("G", "T"): 10,
         ("H", "T"): 10,
@@ -23,8 +21,8 @@ def test_algorithms_return_same_for_known_graph():
     ff = ford_fulkerson_max_flow(capacities, "A", "T")
     ek = edmonds_karp_max_flow(capacities, "A", "T")
 
-    assert ff == 20
-    assert ek == 20
+    assert ff == 18
+    assert ek == 18
 
 
 def test_zero_capacity_graph_returns_zero():

@@ -22,7 +22,6 @@ class BoardGenerationError(RuntimeError):
 @dataclass(frozen=True)
 class BoardSetup:
     """Immutable game board configuration.
-
     Represents a complete Snakes and Ladders board with size and piece placements.
 
     Attributes:

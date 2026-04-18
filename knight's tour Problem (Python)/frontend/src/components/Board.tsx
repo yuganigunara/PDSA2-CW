@@ -49,19 +49,37 @@ function Board({
             .filter(Boolean)
             .join(' ');
 
+        const labelParts = [`Row ${row + 1}, column ${col + 1}`];
+        if (isStart) {
+            labelParts.push('start square');
+        }
+        if (isCurrent) {
+            labelParts.push('current square');
+        }
+        if (isLegal && isManualReady) {
+            labelParts.push('legal move');
+        }
+        if (isVisited) {
+            labelParts.push('visited');
+        }
+
         return (
             <button
                 key={key}
                 className={classes}
                 type="button"
                 onClick={() => onCellClick(cell)}
-                aria-label={`Row ${row + 1}, column ${col + 1}`}
+                aria-label={labelParts.join(', ')}
             >
-                <span className="cell-label">{moveIndex >= 0 ? moveIndex + 1 : row + 1}</span>
-                {isCurrent && <img className="cell-knight" src={knightIcon} alt="" aria-hidden="true" />}
+                <span className="cell-label">{moveIndex >= 0 ? moveIndex + 1 : `${row + 1},${col + 1}`}</span>
+                {isCurrent && (
+                    <span className={isDark ? 'cell-knight-shell cell-knight-shell-dark' : 'cell-knight-shell cell-knight-shell-light'}>
+                        <img className="cell-knight" src={knightIcon} alt="" aria-hidden="true" />
+                    </span>
+                )}
                 {isPreviewStart && <span className="cell-tag">Start here</span>}
                 {isStart && !isPreviewStart && <span className="cell-tag">Start</span>}
-                {isCurrent && <span className="cell-tag cell-tag-current">Knight</span>}
+                {isCurrent && <span className="cell-tag cell-tag-current">You are here</span>}
                 {isLegal && isManualReady && <span className="cell-ring" />}
             </button>
         );
