@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Traffic Max-Flow Game</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <main class="page">
+      <div class="hero-orb hero-orb-left"></div>
+      <div class="hero-orb hero-orb-right"></div>
+      <div class="spark spark-1"></div>
+      <div class="spark spark-2"></div>
+
+      <section class="container hero">
+        <p class="eyebrow">Graph Challenge</p>
+        <h1>Traffic Simulation: Max Flow</h1>
+        <p class="subtitle">Find the maximum vehicles per minute from A to T.</p>
+      </section>
+
+      <section class="container card board">
+        <div class="section-head">
+          <h2>Road Network</h2>
+          <span class="muted">Directed edges with capacities</span>
+        </div>
+        <svg id="network" viewBox="0 0 980 380" aria-label="Traffic network graph"></svg>
+      </section>
+
+      <section class="container card controls">
+        <div class="section-head">
+          <h2>Round Controls</h2>
+        </div>
+        <div class="field-grid">
+          <label>
+            Player name (for wins)
+            <input id="playerName" type="text" maxlength="40" placeholder="Your name" />
+          </label>
+          <label>
+            Your max-flow answer
+            <input id="answer" type="number" min="0" placeholder="e.g. 34" />
+          </label>
+        </div>
+        <div class="buttons">
+          <button id="newRoundBtn" class="primary-button">New Round</button>
+          <button id="submitBtn" class="secondary-button">Submit Answer</button>
+        </div>
+      </section>
+
+      <section class="container card result" id="resultBox" aria-live="polite">
+        <div class="section-head">
+          <h2>Round Result</h2>
+        </div>
+        <p class="status-line">Press <strong>New Round</strong> to start.</p>
+      </section>
+
+      <section class="container card leaderboard">
+        <div class="section-head">
+          <h2>Leaderboard</h2>
+          <span class="muted">Top winners</span>
+        </div>
+        <ul id="leaderboardList" class="leaderboard-list"></ul>
+      </section>
+
+      <section class="container card benchmark">
+        <div class="section-head">
+          <h2>Algorithm Timing Chart</h2>
+          <span class="muted">20 individual rounds</span>
+        </div>
+        <div class="buttons">
+          <button id="runBenchmarkBtn" class="secondary-button">Run 20-Round Benchmark</button>
+        </div>
+        <p id="benchmarkSummary" class="status-line">Click the button to generate timing data.</p>
+        <div class="chart-wrap">
+          <canvas id="timingChart" aria-label="Algorithm timing chart" role="img"></canvas>
+        </div>
+      </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    <script src="/static/app.js"></script>
+  </body>
+</html>

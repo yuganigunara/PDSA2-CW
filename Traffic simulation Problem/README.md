@@ -37,9 +37,20 @@ pytest -q
 
 ## Project structure
 
-- `app/algorithms.py` - max-flow implementations
-- `app/main.py` - Flask routes and game flow
-- `app/storage.py` - SQLite access layer
-- `app/templates/index.html` - UI shell
-- `app/static/app.js` - graph rendering + frontend gameplay
+- `backend/app/algorithms.py` - max-flow implementations
+- `backend/app/main.py` - Flask routes and game flow
+- `backend/app/storage.py` - SQLite access layer
+- `backend/run_api.py` - backend entrypoint
+- `frontend/templates/index.html` - UI shell
+- `frontend/static/app.js` - graph rendering + frontend gameplay
+- `frontend/static/style.css` - frontend styling
 - `tests/test_algorithms.py` - algorithm unit tests
+
+## New Frontend/Backend layout
+
+This project now follows a split layout similar to the Knight's Tour project:
+
+- `backend/` for Python API and game logic
+- `frontend/` for templates/static UI assets
+
+The root `run.py` keeps compatibility with Game Hub launches and starts the backend app which serves the frontend assets.
