@@ -1,157 +1,83 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Traffic Max-Flow Game</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <main class="page">
+      <div class="hero-orb hero-orb-left"></div>
+      <div class="hero-orb hero-orb-right"></div>
+      <div class="spark spark-1"></div>
+      <div class="spark spark-2"></div>
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Traffic Max-Flow Game</title>
-  <link rel="stylesheet" href="/static/style.css" />
-</head>
+      <section class="container hero">
+        <p class="eyebrow">Graph Challenge</p>
+        <h1>Traffic Simulation: Max Flow</h1>
+        <p class="subtitle">Find the maximum vehicles per minute from A to T.</p>
+      </section>
 
-<body>
-  <main class="page">
-    <div class="hero-orb hero-orb-left"></div>
-    <div class="hero-orb hero-orb-right"></div>
-    <div class="spark spark-1"></div>
-    <div class="spark spark-2"></div>
+      <section class="container card board">
+        <div class="section-head">
+          <h2>Road Network</h2>
+          <span class="muted">Directed edges with capacities</span>
+        </div>
+        <svg id="network" viewBox="0 0 980 380" aria-label="Traffic network graph"></svg>
+      </section>
 
-    <section id="menuScreen" class="container screen menu-screen">
-      <article class="card menu-card">
-        <p class="eyebrow">Traffic Challenge</p>
-        <h1>Traffic simulation Problem</h1>
-        <p class="subtitle">
-          Enter your name, then start the game. You need to guess the maximum flow from A to T for each random round.
-        </p>
-
-        <div class="menu-controls">
+      <section class="container card controls">
+        <div class="section-head">
+          <h2>Round Controls</h2>
+        </div>
+        <div class="field-grid">
           <label>
-            Player name
-            <input id="menuPlayerName" type="text" maxlength="40" placeholder="Your name" />
+            Player name (for wins)
+            <input id="playerName" type="text" maxlength="40" placeholder="Your name" />
           </label>
-          <p id="menuValidation" class="validation-message hidden">Please enter your name to continue.</p>
+          <label>
+            Your max-flow answer
+            <input id="answer" type="number" min="0" placeholder="e.g. 34" />
+          </label>
         </div>
-
-        <div class="menu-actions">
-          <button id="startGameBtn" class="primary-button" type="button">Start Playing</button>
-          <button id="toggleLeaderboardBtn" class="secondary-button" type="button">Show Leaderboard</button>
-          <button id="toggleRecentResultsBtn" class="secondary-button" type="button">Show Recent Results</button>
-          <button id="backToHubFromMenuBtn" class="secondary-button" type="button">Back to Game Hub</button>
+        <div class="buttons">
+          <button id="newRoundBtn" class="primary-button">New Round</button>
+          <button id="submitBtn" class="secondary-button">Submit Answer</button>
         </div>
+      </section>
 
-        <section id="menuLeaderboardSection" class="menu-leaderboard hidden">
-          <div class="section-head">
-            <h2>Leaderboard</h2>
-            <span class="muted">Top winners</span>
-          </div>
-          <ul id="menuLeaderboardList" class="leaderboard-list"></ul>
-        </section>
-
-        <section id="menuRecentResultsSection" class="menu-leaderboard hidden">
-          <div class="section-head">
-            <h2>Recent Results</h2>
-            <span class="muted">Win / Draw / Lose</span>
-          </div>
-          <ul id="recentResultsList" class="leaderboard-list"></ul>
-        </section>
-      </article>
-    </section>
-
-    <section id="gameScreen" class="container screen game-screen hidden">
-      <header class="game-header card">
-        <div>
-          <p class="eyebrow">Live Round</p>
-          <h2>Traffic simulation Problem</h2>
-          <p class="muted">Player: <strong id="activePlayerLabel">-</strong></p>
+      <section class="container card result" id="resultBox" aria-live="polite">
+        <div class="section-head">
+          <h2>Round Result</h2>
         </div>
-        <div class="header-actions">
-          <button id="newRoundBtn" class="primary-button" type="button">New Round</button>
-          <button id="openInstructionsBtn" class="secondary-button" type="button">Instructions</button>
-          <button id="openSettingsBtn" class="secondary-button" type="button">Settings</button>
-          <button id="resetBoardBtn" class="secondary-button" type="button">Reset</button>
-          <button id="menuBtn" class="secondary-button" type="button">Menu</button>
+        <p class="status-line">Press <strong>New Round</strong> to start.</p>
+      </section>
+
+      <section class="container card leaderboard">
+        <div class="section-head">
+          <h2>Leaderboard</h2>
+          <span class="muted">Top winners</span>
         </div>
-      </header>
+        <ul id="leaderboardList" class="leaderboard-list"></ul>
+      </section>
 
-      <div class="game-grid">
-        <section class="card board-card">
-          <div class="section-head">
-            <h2>Road Network</h2>
-            <span class="muted">Round: <strong id="roundLabel">-</strong></span>
-          </div>
-          <svg id="network" viewBox="0 0 980 380" aria-label="Traffic network graph"></svg>
-        </section>
+      <section class="container card benchmark">
+        <div class="section-head">
+          <h2>Algorithm Timing Chart</h2>
+          <span class="muted">20 individual rounds</span>
+        </div>
+        <div class="buttons">
+          <button id="runBenchmarkBtn" class="secondary-button">Run 20-Round Benchmark</button>
+        </div>
+        <p id="benchmarkSummary" class="status-line">Click the button to generate timing data.</p>
+        <div class="chart-wrap">
+          <canvas id="timingChart" aria-label="Algorithm timing chart" role="img"></canvas>
+        </div>
+      </section>
+    </main>
 
-        <aside class="side-stack">
-          <section class="card controls-card">
-            <div class="section-head">
-              <h2>Round Controls</h2>
-            </div>
-            <div class="field-grid">
-              <label>
-                Your max-flow answer
-                <input id="answer" type="number" min="0" placeholder="e.g. 34" />
-              </label>
-            </div>
-            <div class="buttons">
-              <button id="submitBtn" class="secondary-button" type="button">Submit Answer</button>
-            </div>
-          </section>
-
-          <section class="card result-card" id="resultBox" aria-live="polite">
-            <div class="section-head">
-              <h2>Round Result</h2>
-            </div>
-            <p class="status-line">Press <strong>New Round</strong> to start.</p>
-          </section>
-
-
-        </aside>
-      </div>
-    </section>
-  </main>
-
-  <div id="instructionsModal" class="modal-overlay hidden" role="dialog" aria-modal="true"
-    aria-labelledby="instructionsTitle">
-    <article class="modal-card">
-      <div class="section-head">
-        <h2 id="instructionsTitle">How to Play</h2>
-      </div>
-      <ol class="instruction-list">
-        <li>Press <strong>New Round</strong> to generate random road capacities between 5 and 15.</li>
-        <li>Read the values shown on graph edges.</li>
-        <li>Enter your max-flow guess from A to T and submit.</li>
-        <li>You get <strong>Win</strong> for exact answer, <strong>Draw</strong> for close answer, otherwise
-          <strong>Lose</strong>.
-        </li>
-      </ol>
-      <div class="buttons">
-        <button id="closeInstructionsBtn" class="primary-button" type="button">Close</button>
-      </div>
-    </article>
-  </div>
-
-  <div id="settingsModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
-    <article class="modal-card">
-      <div class="section-head">
-        <h2 id="settingsTitle">Settings</h2>
-      </div>
-      <div class="field-grid settings-grid">
-        <label class="checkbox-label">
-          <input id="autoStartEnter" type="checkbox" checked />
-          Auto start a round when entering game
-        </label>
-        <label class="checkbox-label">
-          <input id="autoStartAfterSubmit" type="checkbox" />
-          Auto start next round after submit
-        </label>
-      </div>
-      <div class="buttons">
-        <button id="closeSettingsBtn" class="primary-button" type="button">Save & Close</button>
-      </div>
-    </article>
-  </div>
-
-  <script src="/static/app.js"></script>
-</body>
-
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    <script src="/static/app.js"></script>
+  </body>
 </html>
