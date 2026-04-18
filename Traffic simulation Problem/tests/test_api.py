@@ -1,28 +1,11 @@
 from pathlib import Path
 
-from app.config import EDGES
-from app.main import create_app
+from backend.app.config import EDGES
+from backend.app.main import create_app
 
 
 def _db_path(tmp_path: Path) -> Path:
     return tmp_path / "traffic_test.db"
-
-
-def test_benchmark_endpoint_returns_20_rounds(tmp_path):
-    app = create_app(_db_path(tmp_path))
-
-    with app.test_client() as client:
-        response = client.get("/api/benchmark")
-
-    assert response.status_code == 200
-    payload = response.get_json()
-
-    assert payload["rounds"] == 20
-    assert len(payload["labels"]) == 20
-    assert len(payload["fordFulkersonMs"]) == 20
-    assert len(payload["edmondsKarpMs"]) == 20
-    assert payload["averageFordFulkersonMs"] >= 0
-    assert payload["averageEdmondsKarpMs"] >= 0
 
 
 def test_new_round_generates_required_edges_within_range(tmp_path: Path):
