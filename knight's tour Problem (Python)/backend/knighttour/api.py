@@ -47,7 +47,7 @@ def solve():
     node_limit = data.get("nodeLimit", 3_500_000)
     
     # Validate inputs
-    if size not in [4, 6, 8, 16]:
+    if size not in [8, 16]:
         return jsonify({"error": "Invalid board size"}), 400
     if solver not in ["warnsdorff", "backtracking"]:
         return jsonify({"error": "Invalid solver"}), 400
@@ -99,6 +99,17 @@ def add_winner():
         size = int(data.get("size", 8))
     except (TypeError, ValueError):
         return jsonify({"error": "Invalid board size"}), 400
+
+    if size not in [8, 16]:
+        return jsonify({"error": "Invalid board size"}), 400
+
+    if not path:
+        return jsonify({"error": "Path is required"}), 400
+
+    candidate_path = [Position(row, col) for row, col in path]
+    report = validate_path(size, candidate_path, candidate_path[0])
+    if not report.valid:
+        return jsonify({"error": f"Invalid winner path: {report.reason}"}), 400
 
     path_length_raw = data.get("pathLength", data.get("moves", len(path)))
     try:
