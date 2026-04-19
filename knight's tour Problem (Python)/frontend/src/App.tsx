@@ -520,10 +520,13 @@ function App() {
                             {playerNameError ? <p className="validation-message">{playerNameError}</p> : null}
                             <label>
                                 Board Size
-                                <select value={boardSize} onChange={(event) => setBoardSize(Number(event.target.value) as BoardSize)}>
-                                    <option value={8}>8 × 8 (Easy)</option>
-                                    <option value={16}>16 × 16 (Hard)</option>
-                                </select>
+                                <div className="input-cover">
+                                    <select value={boardSize} onChange={(event) => setBoardSize(Number(event.target.value) as BoardSize)}>
+                                        <option value={8}>8 × 8 (Easy)</option>
+                                        <option value={16}>16 × 16 (Hard)</option>
+                                    </select>
+                                </div>
+                                <span className="input-helper">8 × 8 is recommended for new players</span>
                             </label>
                             <div className="menu-actions">
                                 <button className="primary-button" type="button" onClick={enterGameFromMenu} disabled={!trimmedPlayerName}>
