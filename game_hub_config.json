@@ -33,17 +33,26 @@
         "name": "Sixteen Queens (Branch)",
         "cwd": "sixteen queens",
         "command": [
-            "explorer",
+            "{python}",
             "."
         ],
         "enabled": true,
         "needs_src_path": false
     },
     {
-        "name": "Game Slot 5",
-        "cwd": "",
-        "command": [],
-        "enabled": false,
+        "name": "Minimum Cost Studio",
+        "cwd": "minimum,_cost_problem/server",
+        "command": [
+            "{python}",
+            "-m",
+            "uvicorn",
+            "app:app",
+            "--host",
+            "127.0.0.1",
+            "--port",
+            "8006"
+        ],
+        "enabled": true,
         "needs_src_path": false
     }
 ]
