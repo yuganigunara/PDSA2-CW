@@ -1,3 +1,60 @@
+/* Highlight the last move cell */
+.cell-last-move {
+    box-shadow: 0 0 0 4px rgba(85, 207, 232, 0.22);
+    animation: lastMovePulse 0.7s;
+}
+
+@keyframes lastMovePulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(85, 207, 232, 0.32);
+    }
+
+    70% {
+        box-shadow: 0 0 0 8px rgba(85, 207, 232, 0.12);
+    }
+
+    100% {
+        box-shadow: 0 0 0 4px rgba(85, 207, 232, 0.22);
+    }
+}
+
+/* Animate knight movement */
+.knight-animate {
+    animation: knightPop 0.25s cubic-bezier(0.4, 0.2, 0.2, 1);
+}
+
+@keyframes knightPop {
+    0% {
+        transform: scale(0.7);
+        opacity: 0.5;
+    }
+
+    80% {
+        transform: scale(1.15);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Animate legal move ring */
+.cell-legal-animate {
+    animation: legalRingPulse 0.7s infinite alternate;
+}
+
+@keyframes legalRingPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(138, 201, 38, 0.18);
+    }
+
+    100% {
+        box-shadow: 0 0 0 8px rgba(138, 201, 38, 0.10);
+    }
+}
+
 :root {
     color-scheme: dark;
     font-family: 'IBM Plex Sans', system-ui, sans-serif;
@@ -139,8 +196,8 @@ button {
     width: 100%;
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 16px;
-    background: rgba(255, 255, 255, 0.05);
-    color: var(--text);
+    background: rgba(87, 71, 71, 0.05);
+    color: #7e7c7c;
     padding: 12px 14px;
     outline: none;
 }
