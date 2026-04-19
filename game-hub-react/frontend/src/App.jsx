@@ -97,13 +97,6 @@ function App() {
     }, []);
 
     useEffect(() => {
-        const intervalId = window.setInterval(() => {
-            loadGames();
-        }, 5000);
-
-        return () => {
-            window.clearInterval(intervalId);
-        };
     }, []);
 
     function getQuickLaunchUrl(game) {
@@ -132,7 +125,6 @@ function App() {
 
         setNotice("");
         setError("");
-        setWelcome(`Welcome to ${gameName}`);
         setActiveLaunchIndex(slotIndex);
         setLaunchingIndex(slotIndex);
         setCelebrateTick((value) => value + 1);
@@ -164,7 +156,7 @@ function App() {
                 if (quickUrl) {
                     const ready = await waitForHttpReady(quickUrl);
                     if (ready) {
-                        window.open(`${quickUrl}?fromHub=1`, "_blank", "noopener");
+                        window.open(`${quickUrl}?fromHub=1`, "_self");
                     } else {
                         setNotice(
                             `${data.message} (PID: ${data.pid}). Web UI is still starting; open ${quickUrl} manually in a few seconds.`
@@ -193,6 +185,14 @@ function App() {
         launchGame(lastPlayedIndex);
     }
 
+    const staticNames = [
+        "Snake Ladder Studio",
+        "Knight's Tour Studio",
+        "Traffic Simulation Studio",
+        "Sixteen Queens Studio",
+        "Minimum Cost Studio"
+    ];
+
     return (
         <div className={`page celebrate-${celebrateTick % 2}`}>
             <div className="hero-orb hero-orb-left" />
@@ -203,19 +203,11 @@ function App() {
 
             <header className="topbar">
                 <div>
-                    <h1>Game Hub Control Deck</h1>
-                    <p>One software experience for all 5 game slots.</p>
+                    <h1>AlgoPlay Hub</h1>
+                    <p>One interactive platform to solve complex algorithms through fun challenges</p>
                     {welcome && <p className="welcome-banner">{welcome}</p>}
                 </div>
-                <div className="topbar-actions">
-                    <div className="stat-badge">
-                        <span>{enabledCount}</span>
-                        <small>active games</small>
-                    </div>
-                    <button className="refresh-button" onClick={loadGames}>
-                        Refresh
-                    </button>
-                </div>
+
             </header>
 
             <main>
@@ -223,20 +215,7 @@ function App() {
                 {error && <p className="message error">{error}</p>}
                 {notice && <p className="message ok">{notice}</p>}
 
-                <section className="toolbar">
-                    <input
-                        className="search-input"
-                        value={query}
-                        onChange={(event) => setQuery(event.target.value)}
-                        onKeyDown={(event) => {
-                            if (event.key === "Enter") {
-                                launchFirstFiltered();
-                            }
-                        }}
-                        placeholder="Search game or folder..."
-                    />
-                    <div className="filter-tabs" />
-                </section>
+
 
                 <section className="quick-row">
                     <button className="tab-btn" onClick={launchLastPlayed}>
@@ -256,37 +235,43 @@ function App() {
                     >
                         📊 View Logs
                     </button>
-                    <small className="results-note">Showing {filteredGames.length} of {games.length} slots</small>
+
                 </section>
 
                 <section className="grid">
-                    {filteredGames.map(({ game, slotIndex }) => (
-                        <article
-                            className={`card ${activeLaunchIndex === slotIndex ? "card-launch" : ""}`}
-                            key={`${game.name}-${slotIndex}`}
-                            style={{ animationDelay: `${slotIndex * 70}ms` }}
-                        >
-                            <div className="card-head">
-                                <h2>{game.name || `Game Slot ${slotIndex + 1}`}</h2>
-                                <span className="pill on">Enabled</span>
-                            </div>
-
-                            <p className="slot-id">Slot {slotIndex + 1}</p>
-                            <p className="meta">Folder: {game.cwd || "not set"}</p>
-                            <p className="meta">Command: {(game.command || []).join(" ") || "not set"}</p>
-
-                            <div className="actions">
-                                <button
-                                    onClick={() => launchGame(slotIndex)}
-                                    disabled={
-                                        launchingIndex === slotIndex || !game.cwd || !(game.command || []).length
-                                    }
-                                >
-                                    {launchingIndex === slotIndex ? "Launching..." : "Play Now"}
-                                </button>
-                            </div>
-                        </article>
-                    ))}
+                    {[0, 1, 2, 3, 4].map((slotIndex) => {
+                        const descriptions = [
+                            "Play the classic Snake & Ladder challenge-roll,climb,and win!",
+                            "Solve the Knight's Tour puzzle with smart and strategic moves.",
+                            "Simulate and optimize real-time traffic flow using powerful algorithms.",
+                            "Master the Sixteen Queens puzzle with logical placement strategies.",
+                            "Assign tasks efficiently and minimize total cost using smart optimization."
+                        ];
+                        return (
+                            <article
+                                className={`card ${activeLaunchIndex === slotIndex ? "card-launch" : ""}`}
+                                key={`slot-${slotIndex}`}
+                                style={{ animationDelay: `${slotIndex * 70}ms` }}
+                            >
+                                <div className="card-head">
+                                    <h2>{staticNames[slotIndex]}</h2>
+                                    <span className="pill on">Enabled</span>
+                                </div>
+                                <p className="slot-id">Slot {slotIndex + 1}</p>
+                                <p className="meta">{descriptions[slotIndex]}</p>
+                                <div className="actions">
+                                    <button
+                                        onClick={() => launchGame(slotIndex)}
+                                        disabled={
+                                            launchingIndex === slotIndex
+                                        }
+                                    >
+                                        {launchingIndex === slotIndex ? "Launching..." : "Play Now"}
+                                    </button>
+                                </div>
+                            </article>
+                        );
+                    })}
                 </section>
 
                 {!loading && filteredGames.length === 0 && (
