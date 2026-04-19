@@ -40,17 +40,18 @@ DEFAULT_GAMES = [
     {
         "name": "Sixteen Queens (Branch)",
         "cwd": "sixteen queens",
-        "command": ["explorer", "."],
+        "command": ["{python}", "run_branch.py"],
         "enabled": True,
         "needs_src_path": False,
     },
+   
     {
-        "name": "Game Slot 5",
-        "cwd": "",
-        "command": [],
-        "enabled": False,
+        "name": "Minimum Cost Studio",
+        "cwd": "minimum,_cost_problem/server",
+        "command": ["{python}","uvicorn", "app:app", "--host", "127.0.0.1", "--port", "8006"],
+        "enabled": True,
         "needs_src_path": False,
-    },
+    }
 ]
 
 
@@ -243,8 +244,15 @@ def launch_game(index: int) -> dict[str, Any]:
     game_name = str(game.get("name", "")).lower()
     command_text = " ".join(str(part).lower() for part in command)
     web_url = None
-    if "run_studio.py" in command_text or "studio" in game_name:
+    # Only Knight's Tour Studio gets 5173, Minimum Cost Studio gets 5187
+    if (
+        "knight" in game_name and "studio" in game_name
+    ):
         web_url = "http://localhost:5173/"
+    elif (
+        "minimum cost" in game_name and "studio" in game_name
+    ):
+        web_url = "http://localhost:5187/"
     elif cwd_rel.lower() == "traffic simulation problem" or (
         "run.py" in command_text and "traffic" in game_name
     ):

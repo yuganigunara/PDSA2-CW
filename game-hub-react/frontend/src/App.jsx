@@ -97,13 +97,6 @@ function App() {
     }, []);
 
     useEffect(() => {
-        const intervalId = window.setInterval(() => {
-            loadGames();
-        }, 5000);
-
-        return () => {
-            window.clearInterval(intervalId);
-        };
     }, []);
 
     function getQuickLaunchUrl(game) {
@@ -163,7 +156,7 @@ function App() {
                 if (quickUrl) {
                     const ready = await waitForHttpReady(quickUrl);
                     if (ready) {
-                        window.open(`${quickUrl}?fromHub=1`, "_blank", "noopener");
+                        window.open(`${quickUrl}?fromHub=1`, "_self");
                     } else {
                         setNotice(
                             `${data.message} (PID: ${data.pid}). Web UI is still starting; open ${quickUrl} manually in a few seconds.`
