@@ -25,7 +25,7 @@ interface RoundScoreView {
     player: string;
     size: number;
     start: string;
-    score: number;
+    moves: number;
     result: 'win' | 'lose' | 'draw';
     timestamp: string;
 }
@@ -33,7 +33,7 @@ interface RoundScoreView {
 const WINNER_STORAGE_KEY = 'knights-tour-react-winners';
 const DEFAULT_SPEED = 40;
 const DEFAULT_NODE_LIMIT = 3_500_000;
-const MAX_WINNERS = 6;
+// Removed MAX_WINNERS limit to show all winners from backend
 
 const GUIDE_STEPS = [
     {
@@ -64,46 +64,9 @@ function formatTimestamp(value: string): string {
     });
 }
 
-function readStoredWinners(): WinnerRecord[] {
-    if (typeof window === 'undefined') {
-        return [];
-    }
+// Removed readStoredWinners; always use backend data
 
-    try {
-        const raw = window.localStorage.getItem(WINNER_STORAGE_KEY);
-        if (!raw) {
-            return [];
-        }
-
-        const parsed = JSON.parse(raw) as unknown;
-        if (!Array.isArray(parsed)) {
-            return [];
-        }
-
-        return parsed.filter((item): item is WinnerRecord => {
-            return Boolean(
-                item
-                && typeof item === 'object'
-                && typeof (item as WinnerRecord).player === 'string'
-                && typeof (item as WinnerRecord).size === 'number'
-                && typeof (item as WinnerRecord).start === 'string'
-                && typeof (item as WinnerRecord).pathLength === 'number'
-                && typeof (item as WinnerRecord).timestamp === 'string'
-                && Array.isArray((item as WinnerRecord).sequence),
-            );
-        });
-    } catch {
-        return [];
-    }
-}
-
-function saveStoredWinners(winners: WinnerRecord[]): void {
-    if (typeof window === 'undefined') {
-        return;
-    }
-
-    window.localStorage.setItem(WINNER_STORAGE_KEY, JSON.stringify(winners.slice(0, MAX_WINNERS)));
-}
+// Removed saveStoredWinners; always use backend data
 
 function parseBoardIndex(value: string): number {
     const parsed = Number.parseInt(value, 10);
@@ -125,6 +88,10 @@ function randomStartPosition(size: BoardSize): Position {
 }
 
 function App() {
+    // Always load scores from backend on mount
+    useEffect(() => {
+        void loadScoresFromDb();
+    }, []);
     const [screen, setScreen] = useState<GameScreen>('menu');
     const [boardSize, setBoardSize] = useState<BoardSize>(8);
     const [mode, setMode] = useState<PlayMode>('manual');
@@ -148,7 +115,7 @@ function App() {
     const [leaderboardError, setLeaderboardError] = useState('');
     const [recentScores, setRecentScores] = useState<RoundScoreView[]>([]);
     const [status, setStatus] = useState('Pick a start square, then press Start Tour or run the auto solver.');
-    const [recentWinners, setRecentWinners] = useState<WinnerRecord[]>(() => readStoredWinners());
+    const [recentWinners, setRecentWinners] = useState<WinnerRecord[]>([]);
     const [showInstructions, setShowInstructions] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
     const animationRef = useRef<number | null>(null);
@@ -167,8 +134,8 @@ function App() {
 
     const sortedScores = [...recentScores].sort((left, right) => {
         if (leaderboardSort === 'score') {
-            if (right.score !== left.score) {
-                return right.score - left.score;
+            if (right.moves !== left.moves) {
+                return right.moves - left.moves;
             }
         }
         return new Date(right.timestamp).getTime() - new Date(left.timestamp).getTime();
@@ -202,9 +169,7 @@ function App() {
         };
     }, [animationIndex, isAnimating, solverPath.length, speed]);
 
-    useEffect(() => {
-        saveStoredWinners(recentWinners);
-    }, [recentWinners]);
+    // Removed saveStoredWinners effect; always use backend data
 
     useEffect(() => {
         void loadWinnersFromDb();
@@ -228,8 +193,7 @@ function App() {
         try {
             const winners = await APIService.getWinners();
             const normalized = winners
-                .filter((item: WinnerRecordResponse) => typeof item.player === 'string' && typeof item.pathLength === 'number')
-                .slice(0, MAX_WINNERS);
+                .filter((item: WinnerRecordResponse) => typeof item.player === 'string' && typeof item.pathLength === 'number');
             setRecentWinners(normalized);
         } catch {
             setLeaderboardError('Could not load leaderboard from database. Showing local history.');
@@ -245,12 +209,11 @@ function App() {
             const scores = await APIService.getScores();
             const normalized = scores
                 .filter((item: ScoreRecordResponse) => typeof item.player === 'string' && typeof item.score === 'number')
-                .slice(0, 30)
                 .map((item: ScoreRecordResponse) => ({
                     player: item.player,
                     size: item.size,
                     start: item.start,
-                    score: item.score,
+                    moves: item.score, // 'score' in API is actually move count
                     result: item.result,
                     timestamp: item.timestamp,
                 }));
@@ -271,8 +234,8 @@ function App() {
             result,
         }).then(() => {
             void loadScoresFromDb();
-        }).catch(() => {
-            // Best effort only.
+        }).catch((err) => {
+            setLeaderboardError('Failed to save score: ' + (err?.message || 'Unknown error'));
         });
     }
 
@@ -291,7 +254,8 @@ function App() {
             sequence: path.map((step) => positionLabel(step)),
         };
 
-        setRecentWinners((current: WinnerRecord[]) => [winner, ...current].slice(0, MAX_WINNERS));
+        // No local state limit; backend will provide all winners
+        setRecentWinners((current: WinnerRecord[]) => [winner, ...current]);
 
         void APIService.saveWinner({
             player: winner.player,
@@ -302,8 +266,8 @@ function App() {
             solver: source,
         }).then(() => {
             void loadWinnersFromDb();
-        }).catch(() => {
-            // Keep gameplay smooth even if backend is temporarily unavailable.
+        }).catch((err) => {
+            setLeaderboardError('Failed to save winner: ' + (err?.message || 'Unknown error'));
         });
     }
 
@@ -556,10 +520,13 @@ function App() {
                             {playerNameError ? <p className="validation-message">{playerNameError}</p> : null}
                             <label>
                                 Board Size
-                                <select value={boardSize} onChange={(event) => setBoardSize(Number(event.target.value) as BoardSize)}>
-                                    <option value={8}>8 × 8 (Easy)</option>
-                                    <option value={16}>16 × 16 (Hard)</option>
-                                </select>
+                                <div className="input-cover">
+                                    <select value={boardSize} onChange={(event) => setBoardSize(Number(event.target.value) as BoardSize)}>
+                                        <option value={8}>8 × 8 (Easy)</option>
+                                        <option value={16}>16 × 16 (Hard)</option>
+                                    </select>
+                                </div>
+                                <span className="input-helper">8 × 8 is recommended for new players</span>
                             </label>
                             <div className="menu-actions">
                                 <button className="primary-button" type="button" onClick={enterGameFromMenu} disabled={!trimmedPlayerName}>
@@ -617,7 +584,7 @@ function App() {
                                                 <tr key={`${row.timestamp}-${row.player}-${row.result}`}>
                                                     <td>{row.player}</td>
                                                     <td>{row.size}x{row.size}</td>
-                                                    <td>{row.score} ({row.result})</td>
+                                                    <td>{row.moves} ({row.result})</td>
                                                     <td>{row.start}</td>
                                                     <td>{formatTimestamp(row.timestamp)}</td>
                                                 </tr>
@@ -732,6 +699,7 @@ function App() {
                             startPosition={startPosition}
                             activePath={activePath}
                             recentWinners={recentWinners}
+                            recentScores={recentScores}
                         />
                     </div>
                 </section>
