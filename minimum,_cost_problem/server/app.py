@@ -6,6 +6,7 @@ import random
 import time
 import sqlite3
 import json
+import re
 import unittest
 from typing import Optional
 from scipy.optimize import linear_sum_assignment
@@ -32,11 +33,12 @@ def init_db():
     conn.execute("""
         CREATE TABLE IF NOT EXISTS game_rounds (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_name TEXT NOT NULL,
             n INTEGER NOT NULL,
             cost_matrix TEXT NOT NULL,
             hungarian_assignment TEXT,
             hungarian_cost REAL,
-            hungarian_time_ms REAL,
+            hungarian_time_ms REAL,   
             greedy_assignment TEXT,
             greedy_cost REAL,
             greedy_time_ms REAL,
@@ -44,18 +46,19 @@ def init_db():
             played_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
+
+    # Backward-compatible migration for existing databases.
+    cols = {row["name"] for row in conn.execute("PRAGMA table_info(game_rounds)").fetchall()}
+    if "user_name" not in cols:
+        conn.execute("ALTER TABLE game_rounds ADD COLUMN user_name TEXT NOT NULL DEFAULT 'Anonymous'")
+
     conn.commit()
     conn.close()
 
 init_db()
 
 def hungarian_algorithm(cost_matrix: list[list[float]]) -> tuple[list[int], float, float]:
-    """
-    Hungarian Algorithm (Munkres) via scipy.
-    Guarantees the globally optimal (minimum cost) assignment.
-    Time complexity: O(n^3)
-    Returns: (assignment list, total cost, elapsed ms)
-    """
+  
     start = time.perf_counter()
     matrix = np.array(cost_matrix)
     row_ind, col_ind = linear_sum_assignment(matrix)
@@ -66,12 +69,7 @@ def hungarian_algorithm(cost_matrix: list[list[float]]) -> tuple[list[int], floa
 
 # Greedy Algorithm
 def greedy_algorithm(cost_matrix: list[list[float]]) -> tuple[list[int], float, float]:
-    """
-    Greedy Algorithm.
-    Assigns each task to the cheapest available employee iteratively.
-    Time complexity: O(n^2 log n)  — fast but sub-optimal.
-    Returns: (assignment list, total cost, elapsed ms)
-    """
+
     start = time.perf_counter()
     n = len(cost_matrix)
     assignment = [-1] * n
@@ -99,16 +97,20 @@ def greedy_algorithm(cost_matrix: list[list[float]]) -> tuple[list[int], float, 
     return assignment, round(total_cost, 2), round(elapsed_ms, 4)
 
 class GameRequest(BaseModel):
+    user_name: str
     n: Optional[int] = None  # if None, random between 50–100
 
 
 class GameResult(BaseModel):
     round_id: int
+    user_name: str
     n: int
     hungarian_assignment: list[int]
+    hungarian_task_costs: list[float]
     hungarian_cost: float
     hungarian_time_ms: float
     greedy_assignment: list[int]
+    greedy_task_costs: list[float]
     greedy_cost: float
     greedy_time_ms: float
     winner: str
@@ -122,7 +124,22 @@ def root():
 
 @app.post("/api/game/play", response_model=GameResult)
 def play_game(req: GameRequest):
-   
+    user_name = req.user_name.strip()
+    if not (2 <= len(user_name) <= 40):
+        raise HTTPException(
+            status_code=422,
+            detail="Name must be 2-40 characters long.",
+        )
+
+    if not re.fullmatch(r"[A-Za-z][A-Za-z\s'\-]*", user_name):
+        raise HTTPException(
+            status_code=422,
+            detail="Name can contain only letters, spaces, apostrophes, and hyphens.",
+        )
+
+    # Collapse repeated internal spaces before storing.
+    user_name = " ".join(user_name.split())
+
     n = req.n if req.n and 50 <= req.n <= 100 else random.randint(50, 100)
 
     # Generate random cost matrix
@@ -141,10 +158,11 @@ def play_game(req: GameRequest):
     conn = get_db()
     cursor = conn.execute(
         """INSERT INTO game_rounds
-           (n, cost_matrix, hungarian_assignment, hungarian_cost, hungarian_time_ms,
+           (user_name, n, cost_matrix, hungarian_assignment, hungarian_cost, hungarian_time_ms,
             greedy_assignment, greedy_cost, greedy_time_ms, winner)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (
+            user_name,
             n,
             json.dumps(cost_matrix),
             json.dumps(h_assign),
@@ -162,14 +180,19 @@ def play_game(req: GameRequest):
 
     # Return first 5x5 preview of cost matrix
     preview = [row[:5] for row in cost_matrix[:5]]
+    h_task_costs = [float(cost_matrix[task][emp]) for task, emp in enumerate(h_assign)]
+    g_task_costs = [float(cost_matrix[task][emp]) for task, emp in enumerate(g_assign)]
 
     return GameResult(
         round_id=round_id,
+        user_name=user_name,
         n=n,
         hungarian_assignment=h_assign,
+        hungarian_task_costs=h_task_costs,
         hungarian_cost=h_cost,
         hungarian_time_ms=h_time,
         greedy_assignment=g_assign,
+        greedy_task_costs=g_task_costs,
         greedy_cost=g_cost,
         greedy_time_ms=g_time,
         winner=winner,
@@ -181,13 +204,36 @@ def get_history(limit: int = 10):
     # Fetch recent game rounds from the db
     conn = get_db()
     rows = conn.execute(
-        """SELECT id, n, hungarian_cost, hungarian_time_ms,
+        """SELECT id, user_name, n, hungarian_cost, hungarian_time_ms,
                   greedy_cost, greedy_time_ms, winner, played_at
            FROM game_rounds ORDER BY id DESC LIMIT ?""",
         (limit,),
     ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
+
+
+@app.get("/api/game/chart-data")
+def get_chart_data(limit: int = 20):
+    # Fetch timing data for the last N rounds for chart visualization
+    conn = get_db()
+    rows = conn.execute(
+        """SELECT id, hungarian_time_ms, greedy_time_ms, played_at
+           FROM game_rounds ORDER BY id ASC LIMIT ?""",
+        (limit,),
+    ).fetchall()
+    conn.close()
+    
+    data = []
+    for r in rows:
+        data.append({
+            "round_id": r[0],
+            "hungarian_time_ms": float(r[1]),
+            "greedy_time_ms": float(r[2]),
+            "played_at": r[3]
+        })
+    
+    return data
 
 
 @app.get("/api/game/round/{round_id}")

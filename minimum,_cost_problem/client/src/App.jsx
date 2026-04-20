@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import "./App.css";
+import { TimingChart } from "./TimingChart";
 
 const API = "http://localhost:8000";
 
 // PLAY ROUND 
 function PlayRound() {
+  const [userName, setUserName] = useState("");
+  const [nameError, setNameError] = useState("");
   const [nInput, setNInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
@@ -21,12 +24,32 @@ function PlayRound() {
     setLogs((prev) => [...prev, { msg, type, ts: Date.now() }]);
   };
 
+  const validateUserName = (value) => {
+    const trimmed = value.trim();
+    if (trimmed.length < 2 || trimmed.length > 40) {
+      return "Name must be 2-40 characters long.";
+    }
+    if (!/^[A-Za-z][A-Za-z\s'-]*$/.test(trimmed)) {
+      return "Name can contain only letters, spaces, apostrophes, and hyphens.";
+    }
+    return "";
+  };
+
   const runRound = async () => {
+    const nameValidation = validateUserName(userName);
+    if (nameValidation) {
+      setNameError(nameValidation);
+      addLog(`✖ ${nameValidation}`, "error");
+      return;
+    }
+
+    const sanitizedName = userName.trim().replace(/\s+/g, " ");
+    setNameError("");
     setLoading(true);
     setProgress(0);
     setResult(null);
     const n = nInput.trim() ? parseInt(nInput) : null;
-    addLog(`► Starting Round #${roundCount}${n ? ` with N=${n}` : " with random N"}...`, "cmd");
+    addLog(`► ${sanitizedName} started Round #${roundCount}${n ? ` with N=${n}` : " with random N"}...`, "cmd");
 
     // Fake progress bar
     const interval = setInterval(() => setProgress((p) => Math.min(p + 12, 90)), 80);
@@ -35,8 +58,14 @@ function PlayRound() {
       const res = await fetch(`${API}/api/game/play`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ n }),
+        body: JSON.stringify({ user_name: sanitizedName, n }),
       });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || "Failed to run round");
+      }
+
       const data = await res.json();
       clearInterval(interval);
       setProgress(100);
@@ -82,6 +111,21 @@ function PlayRound() {
         <div className="round-title">
           Round&nbsp;&nbsp;<span className="accent">#{roundCount}</span>
         </div>
+
+        <label className="field-label">Player Name</label>
+        <input
+          className="n-input"
+          type="text"
+          maxLength={40}
+          placeholder="Enter your name"
+          value={userName}
+          onChange={(e) => {
+            setUserName(e.target.value);
+            if (nameError) setNameError(validateUserName(e.target.value));
+          }}
+          disabled={loading}
+        />
+        {nameError && <p className="name-error">{nameError}</p>}
 
         <label className="field-label">Number of Tasks (N)</label>
         <input
@@ -156,7 +200,8 @@ function PlayRound() {
                     </thead>
                     <tbody>
                       {result.hungarian_assignment.map((empIdx, taskIdx) => {
-                        const cost = result.cost_matrix_preview?.[taskIdx]?.[empIdx];
+                        const cost = result.hungarian_task_costs?.[taskIdx]
+                          ?? result.cost_matrix_preview?.[taskIdx]?.[empIdx];
                         return (
                           <tr key={taskIdx}>
                             <td>Emp {empIdx + 1}</td>
@@ -186,7 +231,8 @@ function PlayRound() {
                     </thead>
                     <tbody>
                       {result.greedy_assignment.map((empIdx, taskIdx) => {
-                        const cost = result.cost_matrix_preview?.[taskIdx]?.[empIdx];
+                        const cost = result.greedy_task_costs?.[taskIdx]
+                          ?? result.cost_matrix_preview?.[taskIdx]?.[empIdx];
                         return (
                           <tr key={taskIdx}>
                             <td>Emp {empIdx + 1}</td>
@@ -235,6 +281,7 @@ function History() {
   const [rows, setRows] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showChart, setShowChart] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -284,11 +331,27 @@ function History() {
         </div>
       )}
 
+      {!showChart && (
+        <button className="chart-toggle-btn" onClick={() => setShowChart(true)}>
+          📈 Generate Chart (Last 20 Rounds)
+        </button>
+      )}
+
+      {showChart && (
+        <>
+          <button className="chart-toggle-btn close-btn" onClick={() => setShowChart(false)}>
+            ✕ Close Chart
+          </button>
+          <TimingChart />
+        </>
+      )}
+
       <div className="history-table-wrap">
         <table className="history-table">
           <thead>
             <tr>
               <th>#</th>
+              <th>Name</th>
               <th>N</th>
               <th>Hungarian $</th>
               <th>Hung. Time</th>
@@ -300,11 +363,12 @@ function History() {
           </thead>
           <tbody>
             {rows.length === 0 && (
-              <tr><td colSpan={8} style={{ textAlign: "center", opacity: 0.5 }}>No rounds played yet.</td></tr>
+              <tr><td colSpan={9} style={{ textAlign: "center", opacity: 0.5 }}>No rounds played yet.</td></tr>
             )}
             {rows.map((r) => (
               <tr key={r.id}>
                 <td className="accent">{r.id}</td>
+                <td>{r.user_name || "-"}</td>
                 <td>{r.n}</td>
                 <td className="hungarian-color">${parseFloat(r.hungarian_cost).toFixed(2)}</td>
                 <td>{parseFloat(r.hungarian_time_ms).toFixed(4)} ms</td>
@@ -335,7 +399,7 @@ const TESTS = [
       const matrix = [[5,1,8],[2,7,4],[6,3,3]];
       const res = await fetch(`${API}/api/game/play`, {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ n: 3 }),
+        body: JSON.stringify({ user_name: "Test Runner", n: 3 }),
       });
       // We can't inject a matrix via API, so we verify structure
       const data = await res.json();
@@ -351,7 +415,7 @@ const TESTS = [
     run: async () => {
       const res = await fetch(`${API}/api/game/play`, {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ n: 50 }),
+        body: JSON.stringify({ user_name: "Test Runner", n: 50 }),
       });
       const data = await res.json();
       const unique = new Set(data.greedy_assignment).size;
@@ -366,7 +430,7 @@ const TESTS = [
     run: async () => {
       const res = await fetch(`${API}/api/game/play`, {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({}),
+        body: JSON.stringify({ user_name: "Test Runner" }),
       });
       const data = await res.json();
       if (data.hungarian_cost > data.greedy_cost + 0.01)
@@ -382,7 +446,7 @@ const TESTS = [
     run: async () => {
       const res = await fetch(`${API}/api/game/play`, {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ n: 100 }),
+        body: JSON.stringify({ user_name: "Test Runner", n: 100 }),
       });
       const data = await res.json();
       if (data.n !== 100) throw new Error(`Expected n=100, got ${data.n}`);
@@ -398,7 +462,7 @@ const TESTS = [
     run: async () => {
       const res = await fetch(`${API}/api/game/play`, {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ n: 75 }),
+        body: JSON.stringify({ user_name: "Test Runner", n: 75 }),
       });
       const data = await res.json();
       const unique = new Set(data.hungarian_assignment).size;
@@ -413,7 +477,7 @@ const TESTS = [
     run: async () => {
       const res = await fetch(`${API}/api/game/play`, {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({}),
+        body: JSON.stringify({ user_name: "Test Runner" }),
       });
       const data = await res.json();
       const check = await fetch(`${API}/api/game/round/${data.round_id}`);
@@ -543,6 +607,9 @@ export default function App() {
         <button className={`tab-btn ${tab === "history" ? "tab-active" : ""}`} onClick={() => setTab("history")}>
           <span className="tab-icon">📋</span> History
         </button>
+        <button className={`tab-btn ${tab === "chart" ? "tab-active" : ""}`} onClick={() => setTab("chart")}>
+          <span className="tab-icon">📈</span> Chart
+        </button>
         <button className={`tab-btn ${tab === "tests" ? "tab-active" : ""}`} onClick={() => setTab("tests")}>
           <span className="tab-icon">✏</span> Unit Tests
         </button>
@@ -552,6 +619,7 @@ export default function App() {
       <main className="app-main">
         {tab === "play" && <PlayRound />}
         {tab === "history" && <History />}
+        {tab === "chart" && <TimingChart />}
         {tab === "tests" && <UnitTests />}
       </main>
     </div>
