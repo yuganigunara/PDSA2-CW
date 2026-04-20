@@ -2,8 +2,10 @@
 -- Projects included:
 -- - Traffic simulation Problem
 -- - knight's tour Problem (Python)
+-- - sixteen queens
 -- - snake
--- Verified against source schemas on: 2026-04-17
+-- - minimum,_cost_problem
+-- Verified against source schemas on: 2026-04-20
 --
 -- Note: game-hub-react only reads existing SQLite databases and does not define its own tables.
 
@@ -58,47 +60,107 @@ CREATE TABLE IF NOT EXISTS round_scores (
 );
 
 -- ============================================================
--- snake
--- Database file: snake_ladder.db
--- Source: snake_ladder/database.py
+-- sixteen queens
+-- Database file: data/sixteen_queens.db
+-- Source: sixteen queens/backend/app/db.py
 -- ============================================================
 
-CREATE TABLE IF NOT EXISTS game_results (
+CREATE TABLE IF NOT EXISTS queens_rounds (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    player_name TEXT NOT NULL,
-    answer INTEGER NOT NULL,
-    bfs_time_ns INTEGER NOT NULL,
-    dp_time_ns INTEGER NOT NULL,
-    board_size INTEGER NOT NULL,
-    ladders_json TEXT NOT NULL,
-    snakes_json TEXT NOT NULL,
+    round_no INTEGER NOT NULL,
+    algorithm TEXT NOT NULL,
+    solutions INTEGER NOT NULL,
+    time_ns INTEGER NOT NULL,
+    peak_bytes INTEGER NOT NULL,
+    board_json TEXT NOT NULL,
     created_at TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS queens_benchmarks (
+CREATE TABLE IF NOT EXISTS queens_answers (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    board_size INTEGER NOT NULL,
-    queens_count INTEGER NOT NULL,
-    sequential_solutions INTEGER NOT NULL,
-    sequential_time_ns INTEGER NOT NULL,
-    threaded_solutions INTEGER NOT NULL,
-    threaded_time_ns INTEGER NOT NULL,
-    created_at TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS queens_correct_answers (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    round_no INTEGER NOT NULL,
     player_name TEXT NOT NULL,
     answer INTEGER NOT NULL,
-    cycle_id INTEGER NOT NULL,
     created_at TEXT NOT NULL,
-    UNIQUE(answer, cycle_id)
+    UNIQUE(round_no, answer)
 );
 
 CREATE TABLE IF NOT EXISTS queens_state (
     singleton_id INTEGER PRIMARY KEY CHECK (singleton_id = 1),
-    current_cycle INTEGER NOT NULL
+    current_round INTEGER NOT NULL DEFAULT 0,
+    recognized INTEGER NOT NULL DEFAULT 0
 );
 
-INSERT OR IGNORE INTO queens_state (singleton_id, current_cycle)
-VALUES (1, 1);
+INSERT OR IGNORE INTO queens_state (singleton_id, current_round, recognized)
+VALUES (1, 0, 0);
+
+-- ============================================================
+-- snake
+-- Database file: snake_ladder.db
+-- Source: snake/snake_ladder/database.py
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS players (
+    player_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    player_name TEXT NOT NULL UNIQUE,
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS games (
+    game_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    player_id INTEGER NOT NULL,
+    board_size INTEGER NOT NULL,
+    correct_answer INTEGER NOT NULL,
+    player_answer INTEGER NOT NULL,
+    is_correct INTEGER NOT NULL CHECK(is_correct IN (0, 1)),
+    created_at TEXT NOT NULL,
+    FOREIGN KEY(player_id) REFERENCES players(player_id)
+);
+
+CREATE TABLE IF NOT EXISTS game_jumps (
+    jump_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    game_id INTEGER NOT NULL,
+    jump_type TEXT NOT NULL CHECK(jump_type IN ('ladder', 'snake')),
+    start_cell INTEGER NOT NULL,
+    end_cell INTEGER NOT NULL,
+    FOREIGN KEY(game_id) REFERENCES games(game_id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS algorithm_runs (
+    run_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    game_id INTEGER NOT NULL,
+    algorithm_name TEXT NOT NULL CHECK(algorithm_name IN ('BFS', 'DP')),
+    minimum_throws INTEGER NOT NULL,
+    time_ns INTEGER NOT NULL,
+    FOREIGN KEY(game_id) REFERENCES games(game_id) ON DELETE CASCADE,
+    UNIQUE(game_id, algorithm_name)
+);
+
+CREATE INDEX IF NOT EXISTS idx_games_created_at
+ON games(created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_game_jumps_game_id
+ON game_jumps(game_id);
+
+CREATE INDEX IF NOT EXISTS idx_algorithm_runs_game_algo
+ON algorithm_runs(game_id, algorithm_name);
+
+-- ============================================================
+-- minimum,_cost_problem
+-- Database file: game.db
+-- Source: minimum,_cost_problem/server/app.py
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS game_rounds (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    n INTEGER NOT NULL,
+    cost_matrix TEXT NOT NULL,
+    hungarian_assignment TEXT,
+    hungarian_cost REAL,
+    hungarian_time_ms REAL,
+    greedy_assignment TEXT,
+    greedy_cost REAL,
+    greedy_time_ms REAL,
+    winner TEXT,
+    played_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
