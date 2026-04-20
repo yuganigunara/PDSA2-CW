@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .routes import router as queens_router
+from app.routes import router as queens_router
 
 app = FastAPI(title="Sixteen Queens API", version="1.0.0")
 app.add_middleware(
