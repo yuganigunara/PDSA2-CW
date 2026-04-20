@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import "./App.css";
 
 const API = "http://localhost:8000";
+const GAME_HUB_URL = "http://localhost:5173/";
 
 // PLAY ROUND 
 function PlayRound({ playerName }) {
@@ -570,7 +571,7 @@ function EntryMenu({ playerName, setPlayerName, onStart, onBackToHub, error }) {
           <button className="random-btn" onClick={() => setShowLeaderboard((v) => !v)}>
             {showLeaderboard ? "Hide Leaderboard" : "Show Leaderboard"}
           </button>
-          <button className="random-btn" onClick={onBackToHub}>Back To Game Hub</button>
+          <button className="random-btn" onClick={onBackToHub}>Back to Game Hub</button>
         </div>
 
         {showLeaderboard ? (
@@ -630,9 +631,9 @@ export default function App() {
 
   const goBackToHub = () => {
     const candidates = [
+      GAME_HUB_URL,
       "http://localhost:5177/",
       "http://localhost:5176/",
-      "http://localhost:5173/",
     ];
 
     const fromReferrer = document.referrer && document.referrer.includes("localhost:517")
@@ -676,7 +677,10 @@ export default function App() {
           <span className="header-diamond">◆</span>
           <span className="header-title">MINIMUM COST TASK ASSIGNMENT</span>
         </div>
-        <div className="header-right">Player: {resolvedPlayer}</div>
+        <div className="header-right">
+          <span className="header-player">Player: {resolvedPlayer}</span>
+          <button className="header-back-btn" onClick={goBackToHub}>Back to menu</button>
+        </div>
       </header>
 
       {/* Tabs */}

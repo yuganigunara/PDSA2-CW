@@ -110,10 +110,36 @@ div {
 }
 
 .header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font-family: "IBM Plex Sans", sans-serif;
   font-size: 13px;
   color: var(--text-dim);
   letter-spacing: 0.6px;
+}
+
+.header-player {
+  white-space: nowrap;
+}
+
+.header-back-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  padding: 9px 14px;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+
+.header-back-btn:hover {
+  border-color: rgba(104, 227, 210, 0.6);
+  color: var(--accent);
+  background: rgba(104, 227, 210, 0.08);
 }
 
 /* ── TAB BAR ── */
@@ -204,9 +230,24 @@ div {
   margin-top: 12px;
 }
 
+.entry-actions > button {
+  flex: 1 1 0;
+  width: 100%;
+  min-width: 0;
+  align-self: stretch;
+  padding: 11px 18px;
+  font-size: 13px;
+}
+
 .entry-actions .run-btn {
-  width: auto;
-  min-width: 170px;
+  width: 100%;
+}
+
+.entry-actions .random-btn {
+  width: 100%;
+  margin-top: 0;
+  align-self: stretch;
+  font-size: 13px;
   padding: 11px 18px;
 }
 
