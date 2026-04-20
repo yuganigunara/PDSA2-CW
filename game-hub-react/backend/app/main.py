@@ -40,7 +40,7 @@ DEFAULT_GAMES = [
     {
         "name": "Sixteen Queens (Branch)",
         "cwd": "sixteen queens",
-        "command": ["{python}", "run_branch.py"],
+        "command": ["cmd", "/c", "run_sixteen_queens.bat"],
         "enabled": True,
         "needs_src_path": False,
     },
@@ -227,8 +227,9 @@ def launch_game(index: int) -> dict[str, Any]:
     command = [part.replace("{python}", sys.executable) for part in command]
 
     env = dict(os.environ)
-    # Prevent run_studio.py from opening an extra browser tab when launched from Game Hub.
-    if any("run_studio.py" in str(part).lower() for part in command):
+    # Prevent game launcher scripts from opening extra browser tabs when launched from Game Hub.
+    launchers_with_own_browser = ("run_studio.py", "run_snake_ladder.py")
+    if any(any(marker in str(part).lower() for marker in launchers_with_own_browser) for part in command):
         env["GAME_HUB_LAUNCH"] = "1"
 
     python_paths: list[str] = [str(cwd)]
@@ -244,11 +245,15 @@ def launch_game(index: int) -> dict[str, Any]:
     game_name = str(game.get("name", "")).lower()
     command_text = " ".join(str(part).lower() for part in command)
     web_url = None
-    # Only Knight's Tour Studio gets 5173, Minimum Cost Studio gets 5187
+    # Use dedicated frontend ports per game to avoid cross-launch collisions.
     if (
         "knight" in game_name and "studio" in game_name
     ):
-        web_url = "http://localhost:5173/"
+        web_url = "http://localhost:5174/"
+    elif "snake" in game_name:
+        web_url = "http://localhost:5176/"
+    elif "sixteen" in game_name:
+        web_url = "http://localhost:5190/"
     elif (
         "minimum cost" in game_name and "studio" in game_name
     ):
