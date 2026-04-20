@@ -1,0 +1,786 @@
+{
+    "openapi":  "3.1.0",
+    "info":  {
+                 "title":  "Snake and Ladder Coursework API",
+                 "version":  "0.1.0"
+             },
+    "paths":  {
+                  "/api/health":  {
+                                      "get":  {
+                                                  "summary":  "Health",
+                                                  "operationId":  "health_api_health_get",
+                                                  "responses":  {
+                                                                    "200":  {
+                                                                                "description":  "Successful Response",
+                                                                                "content":  {
+                                                                                                "application/json":  {
+                                                                                                                         "schema":  {
+                                                                                                                                        "additionalProperties":  {
+                                                                                                                                                                     "type":  "string"
+                                                                                                                                                                 },
+                                                                                                                                        "type":  "object",
+                                                                                                                                        "title":  "Response Health Api Health Get"
+                                                                                                                                    }
+                                                                                                                     }
+                                                                                            }
+                                                                            }
+                                                                }
+                                              }
+                                  },
+                  "/api/round":  {
+                                     "post":  {
+                                                  "summary":  "Round Route",
+                                                  "operationId":  "round_route_api_round_post",
+                                                  "requestBody":  {
+                                                                      "content":  {
+                                                                                      "application/json":  {
+                                                                                                               "schema":  {
+                                                                                                                              "$ref":  "#/components/schemas/RoundRequest"
+                                                                                                                          }
+                                                                                                           }
+                                                                                  },
+                                                                      "required":  true
+                                                                  },
+                                                  "responses":  {
+                                                                    "200":  {
+                                                                                "description":  "Successful Response",
+                                                                                "content":  {
+                                                                                                "application/json":  {
+                                                                                                                         "schema":  {
+                                                                                                                                        "$ref":  "#/components/schemas/RoundResponse"
+                                                                                                                                    }
+                                                                                                                     }
+                                                                                            }
+                                                                            },
+                                                                    "422":  {
+                                                                                "description":  "Validation Error",
+                                                                                "content":  {
+                                                                                                "application/json":  {
+                                                                                                                         "schema":  {
+                                                                                                                                        "$ref":  "#/components/schemas/HTTPValidationError"
+                                                                                                                                    }
+                                                                                                                     }
+                                                                                            }
+                                                                            }
+                                                                }
+                                              }
+                                 },
+                  "/api/results":  {
+                                       "post":  {
+                                                    "summary":  "Save Result",
+                                                    "operationId":  "save_result_api_results_post",
+                                                    "requestBody":  {
+                                                                        "required":  true,
+                                                                        "content":  {
+                                                                                        "application/json":  {
+                                                                                                                 "schema":  {
+                                                                                                                                "$ref":  "#/components/schemas/SaveResultRequest"
+                                                                                                                            }
+                                                                                                             }
+                                                                                    }
+                                                                    },
+                                                    "responses":  {
+                                                                      "200":  {
+                                                                                  "description":  "Successful Response",
+                                                                                  "content":  {
+                                                                                                  "application/json":  {
+                                                                                                                           "schema":  {
+                                                                                                                                          "$ref":  "#/components/schemas/ResultRow"
+                                                                                                                                      }
+                                                                                                                       }
+                                                                                              }
+                                                                              },
+                                                                      "422":  {
+                                                                                  "description":  "Validation Error",
+                                                                                  "content":  {
+                                                                                                  "application/json":  {
+                                                                                                                           "schema":  {
+                                                                                                                                          "$ref":  "#/components/schemas/HTTPValidationError"
+                                                                                                                                      }
+                                                                                                                       }
+                                                                                              }
+                                                                              }
+                                                                  }
+                                                },
+                                       "get":  {
+                                                   "summary":  "Get Results",
+                                                   "operationId":  "get_results_api_results_get",
+                                                   "parameters":  [
+                                                                      {
+                                                                          "name":  "limit",
+                                                                          "in":  "query",
+                                                                          "required":  false,
+                                                                          "schema":  {
+                                                                                         "type":  "integer",
+                                                                                         "maximum":  100,
+                                                                                         "minimum":  1,
+                                                                                         "default":  50,
+                                                                                         "title":  "Limit"
+                                                                                     }
+                                                                      }
+                                                                  ],
+                                                   "responses":  {
+                                                                     "200":  {
+                                                                                 "description":  "Successful Response",
+                                                                                 "content":  {
+                                                                                                 "application/json":  {
+                                                                                                                          "schema":  {
+                                                                                                                                         "type":  "array",
+                                                                                                                                         "items":  {
+                                                                                                                                                       "$ref":  "#/components/schemas/ResultRow"
+                                                                                                                                                   },
+                                                                                                                                         "title":  "Response Get Results Api Results Get"
+                                                                                                                                     }
+                                                                                                                      }
+                                                                                             }
+                                                                             },
+                                                                     "422":  {
+                                                                                 "description":  "Validation Error",
+                                                                                 "content":  {
+                                                                                                 "application/json":  {
+                                                                                                                          "schema":  {
+                                                                                                                                         "$ref":  "#/components/schemas/HTTPValidationError"
+                                                                                                                                     }
+                                                                                                                      }
+                                                                                             }
+                                                                             }
+                                                                 }
+                                               }
+                                   },
+                  "/api/database":  {
+                                        "get":  {
+                                                    "summary":  "Get Database",
+                                                    "operationId":  "get_database_api_database_get",
+                                                    "responses":  {
+                                                                      "200":  {
+                                                                                  "description":  "Successful Response",
+                                                                                  "content":  {
+                                                                                                  "application/json":  {
+                                                                                                                           "schema":  {
+                                                                                                                                          "$ref":  "#/components/schemas/DatabaseSnapshotResponse"
+                                                                                                                                      }
+                                                                                                                       }
+                                                                                              }
+                                                                              }
+                                                                  }
+                                                }
+                                    },
+                  "/api/benchmark":  {
+                                         "get":  {
+                                                     "summary":  "Benchmark",
+                                                     "operationId":  "benchmark_api_benchmark_get",
+                                                     "parameters":  [
+                                                                        {
+                                                                            "name":  "rounds",
+                                                                            "in":  "query",
+                                                                            "required":  false,
+                                                                            "schema":  {
+                                                                                           "type":  "integer",
+                                                                                           "maximum":  50,
+                                                                                           "minimum":  1,
+                                                                                           "default":  20,
+                                                                                           "title":  "Rounds"
+                                                                                       }
+                                                                        },
+                                                                        {
+                                                                            "name":  "board_size",
+                                                                            "in":  "query",
+                                                                            "required":  false,
+                                                                            "schema":  {
+                                                                                           "type":  "integer",
+                                                                                           "maximum":  12,
+                                                                                           "minimum":  6,
+                                                                                           "default":  8,
+                                                                                           "title":  "Board Size"
+                                                                                       }
+                                                                        }
+                                                                    ],
+                                                     "responses":  {
+                                                                       "200":  {
+                                                                                   "description":  "Successful Response",
+                                                                                   "content":  {
+                                                                                                   "application/json":  {
+                                                                                                                            "schema":  {
+                                                                                                                                           "$ref":  "#/components/schemas/BenchmarkResponse"
+                                                                                                                                       }
+                                                                                                                        }
+                                                                                               }
+                                                                               },
+                                                                       "422":  {
+                                                                                   "description":  "Validation Error",
+                                                                                   "content":  {
+                                                                                                   "application/json":  {
+                                                                                                                            "schema":  {
+                                                                                                                                           "$ref":  "#/components/schemas/HTTPValidationError"
+                                                                                                                                       }
+                                                                                                                        }
+                                                                                               }
+                                                                               }
+                                                                   }
+                                                 }
+                                     }
+              },
+    "components":  {
+                       "schemas":  {
+                                       "AlgorithmPayload":  {
+                                                                "properties":  {
+                                                                                   "minimum_throws":  {
+                                                                                                          "type":  "integer",
+                                                                                                          "title":  "Minimum Throws"
+                                                                                                      },
+                                                                                   "time_ns":  {
+                                                                                                   "type":  "integer",
+                                                                                                   "title":  "Time Ns"
+                                                                                               }
+                                                                               },
+                                                                "additionalProperties":  false,
+                                                                "type":  "object",
+                                                                "required":  [
+                                                                                 "minimum_throws",
+                                                                                 "time_ns"
+                                                                             ],
+                                                                "title":  "AlgorithmPayload"
+                                                            },
+                                       "AlgorithmRunRow":  {
+                                                               "properties":  {
+                                                                                  "run_id":  {
+                                                                                                 "type":  "integer",
+                                                                                                 "title":  "Run Id"
+                                                                                             },
+                                                                                  "game_id":  {
+                                                                                                  "type":  "integer",
+                                                                                                  "title":  "Game Id"
+                                                                                              },
+                                                                                  "algorithm_name":  {
+                                                                                                         "type":  "string",
+                                                                                                         "title":  "Algorithm Name"
+                                                                                                     },
+                                                                                  "minimum_throws":  {
+                                                                                                         "type":  "integer",
+                                                                                                         "title":  "Minimum Throws"
+                                                                                                     },
+                                                                                  "time_ns":  {
+                                                                                                  "type":  "integer",
+                                                                                                  "title":  "Time Ns"
+                                                                                              }
+                                                                              },
+                                                               "additionalProperties":  false,
+                                                               "type":  "object",
+                                                               "required":  [
+                                                                                "run_id",
+                                                                                "game_id",
+                                                                                "algorithm_name",
+                                                                                "minimum_throws",
+                                                                                "time_ns"
+                                                                            ],
+                                                               "title":  "AlgorithmRunRow"
+                                                           },
+                                       "BenchmarkResponse":  {
+                                                                 "properties":  {
+                                                                                    "rounds":  {
+                                                                                                   "type":  "integer",
+                                                                                                   "title":  "Rounds"
+                                                                                               },
+                                                                                    "board_size":  {
+                                                                                                       "type":  "integer",
+                                                                                                       "title":  "Board Size"
+                                                                                                   },
+                                                                                    "average_bfs_ms":  {
+                                                                                                           "type":  "number",
+                                                                                                           "title":  "Average Bfs Ms"
+                                                                                                       },
+                                                                                    "average_dp_ms":  {
+                                                                                                          "type":  "number",
+                                                                                                          "title":  "Average Dp Ms"
+                                                                                                      },
+                                                                                    "samples":  {
+                                                                                                    "items":  {
+                                                                                                                  "$ref":  "#/components/schemas/BenchmarkSample"
+                                                                                                              },
+                                                                                                    "type":  "array",
+                                                                                                    "title":  "Samples"
+                                                                                                }
+                                                                                },
+                                                                 "additionalProperties":  false,
+                                                                 "type":  "object",
+                                                                 "required":  [
+                                                                                  "rounds",
+                                                                                  "board_size",
+                                                                                  "average_bfs_ms",
+                                                                                  "average_dp_ms",
+                                                                                  "samples"
+                                                                              ],
+                                                                 "title":  "BenchmarkResponse"
+                                                             },
+                                       "BenchmarkSample":  {
+                                                               "properties":  {
+                                                                                  "round_number":  {
+                                                                                                       "type":  "integer",
+                                                                                                       "title":  "Round Number"
+                                                                                                   },
+                                                                                  "bfs_time_ns":  {
+                                                                                                      "type":  "integer",
+                                                                                                      "title":  "Bfs Time Ns"
+                                                                                                  },
+                                                                                  "dp_time_ns":  {
+                                                                                                     "type":  "integer",
+                                                                                                     "title":  "Dp Time Ns"
+                                                                                                 },
+                                                                                  "bfs_ms":  {
+                                                                                                 "type":  "number",
+                                                                                                 "title":  "Bfs Ms"
+                                                                                             },
+                                                                                  "dp_ms":  {
+                                                                                                "type":  "number",
+                                                                                                "title":  "Dp Ms"
+                                                                                            }
+                                                                              },
+                                                               "additionalProperties":  false,
+                                                               "type":  "object",
+                                                               "required":  [
+                                                                                "round_number",
+                                                                                "bfs_time_ns",
+                                                                                "dp_time_ns",
+                                                                                "bfs_ms",
+                                                                                "dp_ms"
+                                                                            ],
+                                                               "title":  "BenchmarkSample"
+                                                           },
+                                       "BoardPayload":  {
+                                                            "properties":  {
+                                                                               "size":  {
+                                                                                            "type":  "integer",
+                                                                                            "title":  "Size"
+                                                                                        },
+                                                                               "ladders":  {
+                                                                                               "additionalProperties":  {
+                                                                                                                            "type":  "integer"
+                                                                                                                        },
+                                                                                               "type":  "object",
+                                                                                               "title":  "Ladders"
+                                                                                           },
+                                                                               "snakes":  {
+                                                                                              "additionalProperties":  {
+                                                                                                                           "type":  "integer"
+                                                                                                                       },
+                                                                                              "type":  "object",
+                                                                                              "title":  "Snakes"
+                                                                                          },
+                                                                               "goal":  {
+                                                                                            "type":  "integer",
+                                                                                            "title":  "Goal"
+                                                                                        },
+                                                                               "jumps":  {
+                                                                                             "additionalProperties":  {
+                                                                                                                          "type":  "integer"
+                                                                                                                      },
+                                                                                             "type":  "object",
+                                                                                             "title":  "Jumps"
+                                                                                         }
+                                                                           },
+                                                            "additionalProperties":  false,
+                                                            "type":  "object",
+                                                            "required":  [
+                                                                             "size",
+                                                                             "ladders",
+                                                                             "snakes",
+                                                                             "goal",
+                                                                             "jumps"
+                                                                         ],
+                                                            "title":  "BoardPayload"
+                                                        },
+                                       "DatabaseSnapshotResponse":  {
+                                                                        "properties":  {
+                                                                                           "players":  {
+                                                                                                           "items":  {
+                                                                                                                         "$ref":  "#/components/schemas/PlayerRow"
+                                                                                                                     },
+                                                                                                           "type":  "array",
+                                                                                                           "title":  "Players"
+                                                                                                       },
+                                                                                           "games":  {
+                                                                                                         "items":  {
+                                                                                                                       "$ref":  "#/components/schemas/GameRow"
+                                                                                                                   },
+                                                                                                         "type":  "array",
+                                                                                                         "title":  "Games"
+                                                                                                     },
+                                                                                           "game_jumps":  {
+                                                                                                              "items":  {
+                                                                                                                            "$ref":  "#/components/schemas/GameJumpRow"
+                                                                                                                        },
+                                                                                                              "type":  "array",
+                                                                                                              "title":  "Game Jumps"
+                                                                                                          },
+                                                                                           "algorithm_runs":  {
+                                                                                                                  "items":  {
+                                                                                                                                "$ref":  "#/components/schemas/AlgorithmRunRow"
+                                                                                                                            },
+                                                                                                                  "type":  "array",
+                                                                                                                  "title":  "Algorithm Runs"
+                                                                                                              }
+                                                                                       },
+                                                                        "additionalProperties":  false,
+                                                                        "type":  "object",
+                                                                        "required":  [
+                                                                                         "players",
+                                                                                         "games",
+                                                                                         "game_jumps",
+                                                                                         "algorithm_runs"
+                                                                                     ],
+                                                                        "title":  "DatabaseSnapshotResponse"
+                                                                    },
+                                       "GameJumpRow":  {
+                                                           "properties":  {
+                                                                              "jump_id":  {
+                                                                                              "type":  "integer",
+                                                                                              "title":  "Jump Id"
+                                                                                          },
+                                                                              "game_id":  {
+                                                                                              "type":  "integer",
+                                                                                              "title":  "Game Id"
+                                                                                          },
+                                                                              "jump_type":  {
+                                                                                                "type":  "string",
+                                                                                                "title":  "Jump Type"
+                                                                                            },
+                                                                              "start_cell":  {
+                                                                                                 "type":  "integer",
+                                                                                                 "title":  "Start Cell"
+                                                                                             },
+                                                                              "end_cell":  {
+                                                                                               "type":  "integer",
+                                                                                               "title":  "End Cell"
+                                                                                           }
+                                                                          },
+                                                           "additionalProperties":  false,
+                                                           "type":  "object",
+                                                           "required":  [
+                                                                            "jump_id",
+                                                                            "game_id",
+                                                                            "jump_type",
+                                                                            "start_cell",
+                                                                            "end_cell"
+                                                                        ],
+                                                           "title":  "GameJumpRow"
+                                                       },
+                                       "GameRow":  {
+                                                       "properties":  {
+                                                                          "game_id":  {
+                                                                                          "type":  "integer",
+                                                                                          "title":  "Game Id"
+                                                                                      },
+                                                                          "player_id":  {
+                                                                                            "type":  "integer",
+                                                                                            "title":  "Player Id"
+                                                                                        },
+                                                                          "board_size":  {
+                                                                                             "type":  "integer",
+                                                                                             "title":  "Board Size"
+                                                                                         },
+                                                                          "correct_answer":  {
+                                                                                                 "type":  "integer",
+                                                                                                 "title":  "Correct Answer"
+                                                                                             },
+                                                                          "player_answer":  {
+                                                                                                "type":  "integer",
+                                                                                                "title":  "Player Answer"
+                                                                                            },
+                                                                          "is_correct":  {
+                                                                                             "type":  "integer",
+                                                                                             "title":  "Is Correct"
+                                                                                         },
+                                                                          "created_at":  {
+                                                                                             "type":  "string",
+                                                                                             "title":  "Created At"
+                                                                                         }
+                                                                      },
+                                                       "additionalProperties":  false,
+                                                       "type":  "object",
+                                                       "required":  [
+                                                                        "game_id",
+                                                                        "player_id",
+                                                                        "board_size",
+                                                                        "correct_answer",
+                                                                        "player_answer",
+                                                                        "is_correct",
+                                                                        "created_at"
+                                                                    ],
+                                                       "title":  "GameRow"
+                                                   },
+                                       "HTTPValidationError":  {
+                                                                   "properties":  {
+                                                                                      "detail":  {
+                                                                                                     "items":  {
+                                                                                                                   "$ref":  "#/components/schemas/ValidationError"
+                                                                                                               },
+                                                                                                     "type":  "array",
+                                                                                                     "title":  "Detail"
+                                                                                                 }
+                                                                                  },
+                                                                   "type":  "object",
+                                                                   "title":  "HTTPValidationError"
+                                                               },
+                                       "PlayerRow":  {
+                                                         "properties":  {
+                                                                            "player_id":  {
+                                                                                              "type":  "integer",
+                                                                                              "title":  "Player Id"
+                                                                                          },
+                                                                            "player_name":  {
+                                                                                                "type":  "string",
+                                                                                                "title":  "Player Name"
+                                                                                            },
+                                                                            "created_at":  {
+                                                                                               "type":  "string",
+                                                                                               "title":  "Created At"
+                                                                                           }
+                                                                        },
+                                                         "additionalProperties":  false,
+                                                         "type":  "object",
+                                                         "required":  [
+                                                                          "player_id",
+                                                                          "player_name",
+                                                                          "created_at"
+                                                                      ],
+                                                         "title":  "PlayerRow"
+                                                     },
+                                       "ResultRow":  {
+                                                         "properties":  {
+                                                                            "id":  {
+                                                                                       "type":  "integer",
+                                                                                       "title":  "Id"
+                                                                                   },
+                                                                            "player_name":  {
+                                                                                                "type":  "string",
+                                                                                                "title":  "Player Name"
+                                                                                            },
+                                                                            "answer":  {
+                                                                                           "type":  "integer",
+                                                                                           "title":  "Answer"
+                                                                                       },
+                                                                            "bfs_time_ns":  {
+                                                                                                "type":  "integer",
+                                                                                                "title":  "Bfs Time Ns"
+                                                                                            },
+                                                                            "dp_time_ns":  {
+                                                                                               "type":  "integer",
+                                                                                               "title":  "Dp Time Ns"
+                                                                                           },
+                                                                            "board_size":  {
+                                                                                               "type":  "integer",
+                                                                                               "title":  "Board Size"
+                                                                                           },
+                                                                            "ladders":  {
+                                                                                            "additionalProperties":  {
+                                                                                                                         "type":  "integer"
+                                                                                                                     },
+                                                                                            "type":  "object",
+                                                                                            "title":  "Ladders"
+                                                                                        },
+                                                                            "snakes":  {
+                                                                                           "additionalProperties":  {
+                                                                                                                        "type":  "integer"
+                                                                                                                    },
+                                                                                           "type":  "object",
+                                                                                           "title":  "Snakes"
+                                                                                       },
+                                                                            "created_at":  {
+                                                                                               "type":  "string",
+                                                                                               "title":  "Created At"
+                                                                                           }
+                                                                        },
+                                                         "additionalProperties":  false,
+                                                         "type":  "object",
+                                                         "required":  [
+                                                                          "id",
+                                                                          "player_name",
+                                                                          "answer",
+                                                                          "bfs_time_ns",
+                                                                          "dp_time_ns",
+                                                                          "board_size",
+                                                                          "ladders",
+                                                                          "snakes",
+                                                                          "created_at"
+                                                                      ],
+                                                         "title":  "ResultRow"
+                                                     },
+                                       "RoundRequest":  {
+                                                            "properties":  {
+                                                                               "player_name":  {
+                                                                                                   "type":  "string",
+                                                                                                   "maxLength":  50,
+                                                                                                   "minLength":  1,
+                                                                                                   "title":  "Player Name"
+                                                                                               },
+                                                                               "board_size":  {
+                                                                                                  "type":  "integer",
+                                                                                                  "maximum":  12.0,
+                                                                                                  "minimum":  6.0,
+                                                                                                  "title":  "Board Size"
+                                                                                              }
+                                                                           },
+                                                            "additionalProperties":  false,
+                                                            "type":  "object",
+                                                            "required":  [
+                                                                             "player_name",
+                                                                             "board_size"
+                                                                         ],
+                                                            "title":  "RoundRequest"
+                                                        },
+                                       "RoundResponse":  {
+                                                             "properties":  {
+                                                                                "player_name":  {
+                                                                                                    "type":  "string",
+                                                                                                    "title":  "Player Name"
+                                                                                                },
+                                                                                "board":  {
+                                                                                              "$ref":  "#/components/schemas/BoardPayload"
+                                                                                          },
+                                                                                "bfs":  {
+                                                                                            "$ref":  "#/components/schemas/AlgorithmPayload"
+                                                                                        },
+                                                                                "dp":  {
+                                                                                           "$ref":  "#/components/schemas/AlgorithmPayload"
+                                                                                       },
+                                                                                "options":  {
+                                                                                                "items":  {
+                                                                                                              "type":  "integer"
+                                                                                                          },
+                                                                                                "type":  "array",
+                                                                                                "title":  "Options"
+                                                                                            },
+                                                                                "correct_answer":  {
+                                                                                                       "type":  "integer",
+                                                                                                       "title":  "Correct Answer"
+                                                                                                   },
+                                                                                "outcome":  {
+                                                                                                "type":  "string",
+                                                                                                "title":  "Outcome"
+                                                                                            }
+                                                                            },
+                                                             "additionalProperties":  false,
+                                                             "type":  "object",
+                                                             "required":  [
+                                                                              "player_name",
+                                                                              "board",
+                                                                              "bfs",
+                                                                              "dp",
+                                                                              "options",
+                                                                              "correct_answer",
+                                                                              "outcome"
+                                                                          ],
+                                                             "title":  "RoundResponse"
+                                                         },
+                                       "SaveResultRequest":  {
+                                                                 "properties":  {
+                                                                                    "player_name":  {
+                                                                                                        "type":  "string",
+                                                                                                        "maxLength":  50,
+                                                                                                        "minLength":  1,
+                                                                                                        "title":  "Player Name"
+                                                                                                    },
+                                                                                    "answer":  {
+                                                                                                   "type":  "integer",
+                                                                                                   "minimum":  1.0,
+                                                                                                   "title":  "Answer"
+                                                                                               },
+                                                                                    "correct_answer":  {
+                                                                                                           "type":  "integer",
+                                                                                                           "minimum":  1.0,
+                                                                                                           "title":  "Correct Answer"
+                                                                                                       },
+                                                                                    "outcome":  {
+                                                                                                    "type":  "string",
+                                                                                                    "pattern":  "^(PENDING|DRAW)$",
+                                                                                                    "title":  "Outcome"
+                                                                                                },
+                                                                                    "bfs_time_ns":  {
+                                                                                                        "type":  "integer",
+                                                                                                        "minimum":  0.0,
+                                                                                                        "title":  "Bfs Time Ns"
+                                                                                                    },
+                                                                                    "dp_time_ns":  {
+                                                                                                       "type":  "integer",
+                                                                                                       "minimum":  0.0,
+                                                                                                       "title":  "Dp Time Ns"
+                                                                                                   },
+                                                                                    "board_size":  {
+                                                                                                       "type":  "integer",
+                                                                                                       "maximum":  12.0,
+                                                                                                       "minimum":  6.0,
+                                                                                                       "title":  "Board Size"
+                                                                                                   },
+                                                                                    "ladders":  {
+                                                                                                    "additionalProperties":  {
+                                                                                                                                 "type":  "integer"
+                                                                                                                             },
+                                                                                                    "type":  "object",
+                                                                                                    "title":  "Ladders"
+                                                                                                },
+                                                                                    "snakes":  {
+                                                                                                   "additionalProperties":  {
+                                                                                                                                "type":  "integer"
+                                                                                                                            },
+                                                                                                   "type":  "object",
+                                                                                                   "title":  "Snakes"
+                                                                                               }
+                                                                                },
+                                                                 "additionalProperties":  false,
+                                                                 "type":  "object",
+                                                                 "required":  [
+                                                                                  "player_name",
+                                                                                  "answer",
+                                                                                  "correct_answer",
+                                                                                  "outcome",
+                                                                                  "bfs_time_ns",
+                                                                                  "dp_time_ns",
+                                                                                  "board_size",
+                                                                                  "ladders",
+                                                                                  "snakes"
+                                                                              ],
+                                                                 "title":  "SaveResultRequest"
+                                                             },
+                                       "ValidationError":  {
+                                                               "properties":  {
+                                                                                  "loc":  {
+                                                                                              "items":  {
+                                                                                                            "anyOf":  [
+                                                                                                                          {
+                                                                                                                              "type":  "string"
+                                                                                                                          },
+                                                                                                                          {
+                                                                                                                              "type":  "integer"
+                                                                                                                          }
+                                                                                                                      ]
+                                                                                                        },
+                                                                                              "type":  "array",
+                                                                                              "title":  "Location"
+                                                                                          },
+                                                                                  "msg":  {
+                                                                                              "type":  "string",
+                                                                                              "title":  "Message"
+                                                                                          },
+                                                                                  "type":  {
+                                                                                               "type":  "string",
+                                                                                               "title":  "Error Type"
+                                                                                           },
+                                                                                  "input":  {
+                                                                                                "title":  "Input"
+                                                                                            },
+                                                                                  "ctx":  {
+                                                                                              "type":  "object",
+                                                                                              "title":  "Context"
+                                                                                          }
+                                                                              },
+                                                               "type":  "object",
+                                                               "required":  [
+                                                                                "loc",
+                                                                                "msg",
+                                                                                "type"
+                                                                            ],
+                                                               "title":  "ValidationError"
+                                                           }
+                                   }
+                   }
+}
