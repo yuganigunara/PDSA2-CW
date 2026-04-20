@@ -5,10 +5,10 @@ import random
 from typing import Dict
 
 
-MIN_BOARD_SIZE = 6
-MAX_BOARD_SIZE = 12
-DICE_MIN = 1
-DICE_MAX = 6
+MIN_BOARD_SIZE = 6  # Minimum board size (6x6 grid, 36 cells)
+MAX_BOARD_SIZE = 12  # Maximum board size (12x12 grid, 144 cells)
+DICE_MIN = 1  # Minimum dice roll value
+DICE_MAX = 6  # Maximum dice roll value
 
 
 class ValidationError(ValueError):
@@ -21,6 +21,18 @@ class BoardGenerationError(RuntimeError):
 
 @dataclass(frozen=True)
 class BoardSetup:
+    """Immutable game board configuration.
+    Represents a complete Snakes and Ladders board with size and piece placements.
+
+    Attributes:
+        size: Board dimensions (size x size grid). Must be between MIN_BOARD_SIZE and MAX_BOARD_SIZE.
+        ladders: Mapping of ladder start positions to end positions. Must go upward (start < end).
+        snakes: Mapping of snake start positions to end positions. Must go downward (start > end).
+
+    Properties:
+        goal: The target cell position (size * size, representing the final square).
+        jumps: Combined dictionary of all snakes and ladders merged together.
+    """
     size: int
     ladders: Dict[int, int]
     snakes: Dict[int, int]
@@ -37,6 +49,14 @@ class BoardSetup:
 
 
 def validate_board_size(size: int) -> None:
+    """Validate board size is within allowed bounds.
+
+    Args:
+        size: The board dimensions to validate.
+
+    Raises:
+        ValidationError: If size is not an integer or outside [MIN_BOARD_SIZE, MAX_BOARD_SIZE].
+    """
     if not isinstance(size, int):
         raise ValidationError("Board size must be an integer.")
     if size < MIN_BOARD_SIZE or size > MAX_BOARD_SIZE:
@@ -46,6 +66,14 @@ def validate_board_size(size: int) -> None:
 
 
 def validate_dice_roll(roll: int) -> None:
+    """Validate dice roll is within allowed range.
+
+    Args:
+        roll: The dice roll value to validate.
+
+    Raises:
+        ValidationError: If roll is not an integer or outside [DICE_MIN, DICE_MAX].
+    """
     if not isinstance(roll, int):
         raise ValidationError("Dice roll must be an integer.")
     if roll < DICE_MIN or roll > DICE_MAX:
@@ -53,6 +81,23 @@ def validate_dice_roll(roll: int) -> None:
 
 
 def validate_board_setup(size: int, ladders: Dict[int, int], snakes: Dict[int, int]) -> None:
+    """Validate complete board configuration for consistency and safety.
+
+    Ensures:
+    - Board size is valid
+    - All ladders go upward (start < end)
+    - All snakes go downward (start > end)
+    - No pieces occupy invalid cells (1 or goal)
+    - No overlapping snake/ladder placements
+
+    Args:
+        size: Board dimensions.
+        ladders: Dictionary of ladder positions.
+        snakes: Dictionary of snake positions.
+
+    Raises:
+        ValidationError: If any constraint is violated.
+    """
     validate_board_size(size)
     goal = size * size
 

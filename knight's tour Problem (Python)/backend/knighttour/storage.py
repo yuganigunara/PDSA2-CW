@@ -1,16 +1,21 @@
 from __future__ import annotations
 
+
 import json
 import sqlite3
 from pathlib import Path
 from typing import Any
+import os
 
-DEFAULT_STORAGE_FILE = Path(".knights_tour.db")
+# Keep DB location stable regardless of where the process is launched from.
+# storage.py -> knighttour -> backend -> project root
+DEFAULT_STORAGE_FILE = Path(__file__).resolve().parents[2] / ".knights_tour.db"
 
 
 def _connect(storage_file: Path | str) -> sqlite3.Connection:
     db_path = Path(storage_file)
     db_path.parent.mkdir(parents=True, exist_ok=True)
+    print(f"[knighttour.storage] Connecting to DB at: {os.path.abspath(db_path)}")
     return sqlite3.connect(db_path)
 
 
@@ -54,7 +59,7 @@ def get_winners(storage_file: Path | str = DEFAULT_STORAGE_FILE) -> list[dict[st
                 SELECT player, size, start, path_length, timestamp, sequence_json
                 FROM winners
                 ORDER BY id DESC
-                LIMIT 15
+                -- LIMIT removed to show all records
                 """
             ).fetchall()
         finally:
@@ -95,6 +100,7 @@ def save_winner(entry: dict[str, Any], storage_file: Path | str = DEFAULT_STORAG
         sequence = []
 
     try:
+        print(f"[knighttour.storage] Saving winner: player={player}, size={size}, start={start}, path_length={path_length}, timestamp={timestamp}")
         connection = _connect(storage_file)
         try:
             _ensure_schema(connection)
@@ -105,17 +111,13 @@ def save_winner(entry: dict[str, Any], storage_file: Path | str = DEFAULT_STORAG
                 """,
                 (player, size, start, path_length, timestamp, json.dumps(sequence)),
             )
-            connection.execute(
-                """
-                DELETE FROM winners
-                WHERE id NOT IN (SELECT id FROM winners ORDER BY id DESC LIMIT 15)
-                """
-            )
+            # Removed record limit deletion to keep all winners
             connection.commit()
+            print("[knighttour.storage] Winner committed to DB.")
         finally:
             connection.close()
     except (OSError, ValueError, TypeError, sqlite3.DatabaseError):
-        # Best effort persistence: gameplay should continue even if database write fails.
+        print("[knighttour.storage] Failed to save winner!")
         return
 
 
@@ -129,7 +131,7 @@ def get_round_scores(storage_file: Path | str = DEFAULT_STORAGE_FILE) -> list[di
                 SELECT player, size, start, path_length, timestamp
                 FROM winners
                 ORDER BY id DESC
-                LIMIT 30
+                -- LIMIT removed to show all records
                 """
             ).fetchall()
 
@@ -163,13 +165,12 @@ def get_round_scores(storage_file: Path | str = DEFAULT_STORAGE_FILE) -> list[di
                 SELECT player, size, start, score, result, timestamp
                 FROM round_scores
                 ORDER BY id DESC
-                LIMIT 30
                 """
             ).fetchall()
         finally:
             connection.close()
 
-        return [
+        results = [
             {
                 "player": player,
                 "size": size,
@@ -180,6 +181,8 @@ def get_round_scores(storage_file: Path | str = DEFAULT_STORAGE_FILE) -> list[di
             }
             for player, size, start, score, result, timestamp in rows
         ]
+        print(f"[knighttour.storage] get_round_scores: fetched {len(results)} rows. Sample: {results[:2]}")
+        return results
     except (OSError, sqlite3.DatabaseError):
         return []
 
@@ -196,6 +199,7 @@ def save_round_score(entry: dict[str, Any], storage_file: Path | str = DEFAULT_S
         result = "draw"
 
     try:
+        print(f"[knighttour.storage] Saving score: player={player}, size={size}, start={start}, score={score}, result={result}, timestamp={timestamp}")
         connection = _connect(storage_file)
         try:
             _ensure_schema(connection)
@@ -206,14 +210,11 @@ def save_round_score(entry: dict[str, Any], storage_file: Path | str = DEFAULT_S
                 """,
                 (player, size, start, score, result, timestamp),
             )
-            connection.execute(
-                """
-                DELETE FROM round_scores
-                WHERE id NOT IN (SELECT id FROM round_scores ORDER BY id DESC LIMIT 30)
-                """
-            )
+            # Removed record limit deletion to keep all round scores
             connection.commit()
+            print("[knighttour.storage] Score committed to DB.")
         finally:
             connection.close()
     except (OSError, ValueError, TypeError, sqlite3.DatabaseError):
+        print("[knighttour.storage] Failed to save score!")
         return

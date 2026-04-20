@@ -1,4 +1,4 @@
-from snake_ladder.algorithms import min_throws_bfs, min_throws_dp
+from snake_ladder.algorithms import min_throws_bfs, min_throws_dp, timed_bfs, timed_dp
 from snake_ladder.board import BoardSetup
 
 
@@ -24,3 +24,15 @@ def test_bfs_and_dp_with_ladder_and_snake() -> None:
 
     assert bfs == dp
     assert bfs > 0
+
+
+def test_timed_algorithms_return_result_models() -> None:
+    board = BoardSetup(size=6, ladders={}, snakes={})
+
+    bfs = timed_bfs(board)
+    dp = timed_dp(board)
+
+    assert bfs.minimum_throws == 6
+    assert dp.minimum_throws == 6
+    assert bfs.time_ns >= 0
+    assert dp.time_ns >= 0

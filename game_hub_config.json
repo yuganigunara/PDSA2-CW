@@ -1,10 +1,10 @@
 [
     {
-        "name": "Snake and Ladder",
+        "name": "snake_ladder",
         "cwd": "snake",
         "command": [
             "{python}",
-            "main.py"
+            "run_snake_ladder.py"
         ],
         "enabled": true,
         "needs_src_path": false
@@ -20,7 +20,7 @@
         "needs_src_path": false
     },
     {
-        "name": "Traffic Simulation",
+        "name": "Traffic simulation Problem",
         "cwd": "Traffic simulation Problem",
         "command": [
             "{python}",
@@ -30,17 +30,29 @@
         "needs_src_path": false
     },
     {
-        "name": "Game Slot 4",
-        "cwd": "",
-        "command": [],
-        "enabled": false,
+        "name": "Sixteen Queens (Branch)",
+        "cwd": "sixteen queens",
+        "command": [
+            "{python}",
+            "."
+        ],
+        "enabled": true,
         "needs_src_path": false
     },
     {
-        "name": "Game Slot 5",
-        "cwd": "",
-        "command": [],
-        "enabled": false,
+        "name": "Minimum Cost Studio",
+        "cwd": "minimum,_cost_problem/server",
+        "command": [
+            "{python}",
+            "-m",
+            "uvicorn",
+            "app:app",
+            "--host",
+            "127.0.0.1",
+            "--port",
+            "8006"
+        ],
+        "enabled": true,
         "needs_src_path": false
     }
 ]

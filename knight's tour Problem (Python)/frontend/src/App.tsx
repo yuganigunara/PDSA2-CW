@@ -1,6 +1,6 @@
+import * as React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import Board from './components/Board';
-import SetupPanel from './components/SetupPanel';
 import StatusPanel from './components/StatusPanel';
 import {
     getPossibleMoves,
@@ -25,7 +25,7 @@ interface RoundScoreView {
     player: string;
     size: number;
     start: string;
-    score: number;
+    moves: number;
     result: 'win' | 'lose' | 'draw';
     timestamp: string;
 }
@@ -33,7 +33,7 @@ interface RoundScoreView {
 const WINNER_STORAGE_KEY = 'knights-tour-react-winners';
 const DEFAULT_SPEED = 40;
 const DEFAULT_NODE_LIMIT = 3_500_000;
-const MAX_WINNERS = 6;
+// Removed MAX_WINNERS limit to show all winners from backend
 
 const GUIDE_STEPS = [
     {
@@ -64,46 +64,9 @@ function formatTimestamp(value: string): string {
     });
 }
 
-function readStoredWinners(): WinnerRecord[] {
-    if (typeof window === 'undefined') {
-        return [];
-    }
+// Removed readStoredWinners; always use backend data
 
-    try {
-        const raw = window.localStorage.getItem(WINNER_STORAGE_KEY);
-        if (!raw) {
-            return [];
-        }
-
-        const parsed = JSON.parse(raw) as unknown;
-        if (!Array.isArray(parsed)) {
-            return [];
-        }
-
-        return parsed.filter((item): item is WinnerRecord => {
-            return Boolean(
-                item
-                && typeof item === 'object'
-                && typeof (item as WinnerRecord).player === 'string'
-                && typeof (item as WinnerRecord).size === 'number'
-                && typeof (item as WinnerRecord).start === 'string'
-                && typeof (item as WinnerRecord).pathLength === 'number'
-                && typeof (item as WinnerRecord).timestamp === 'string'
-                && Array.isArray((item as WinnerRecord).sequence),
-            );
-        });
-    } catch {
-        return [];
-    }
-}
-
-function saveStoredWinners(winners: WinnerRecord[]): void {
-    if (typeof window === 'undefined') {
-        return;
-    }
-
-    window.localStorage.setItem(WINNER_STORAGE_KEY, JSON.stringify(winners.slice(0, MAX_WINNERS)));
-}
+// Removed saveStoredWinners; always use backend data
 
 function parseBoardIndex(value: string): number {
     const parsed = Number.parseInt(value, 10);
@@ -125,6 +88,10 @@ function randomStartPosition(size: BoardSize): Position {
 }
 
 function App() {
+    // Always load scores from backend on mount
+    useEffect(() => {
+        void loadScoresFromDb();
+    }, []);
     const [screen, setScreen] = useState<GameScreen>('menu');
     const [boardSize, setBoardSize] = useState<BoardSize>(8);
     const [mode, setMode] = useState<PlayMode>('manual');
@@ -148,7 +115,9 @@ function App() {
     const [leaderboardError, setLeaderboardError] = useState('');
     const [recentScores, setRecentScores] = useState<RoundScoreView[]>([]);
     const [status, setStatus] = useState('Pick a start square, then press Start Tour or run the auto solver.');
-    const [recentWinners, setRecentWinners] = useState<WinnerRecord[]>(() => readStoredWinners());
+    const [recentWinners, setRecentWinners] = useState<WinnerRecord[]>([]);
+    const [showInstructions, setShowInstructions] = useState(false);
+    const [showSettings, setShowSettings] = useState(false);
     const animationRef = useRef<number | null>(null);
 
     const startPosition = createStartPosition(boardSize, parseBoardIndex(startRow), parseBoardIndex(startCol));
@@ -165,8 +134,8 @@ function App() {
 
     const sortedScores = [...recentScores].sort((left, right) => {
         if (leaderboardSort === 'score') {
-            if (right.score !== left.score) {
-                return right.score - left.score;
+            if (right.moves !== left.moves) {
+                return right.moves - left.moves;
             }
         }
         return new Date(right.timestamp).getTime() - new Date(left.timestamp).getTime();
@@ -200,9 +169,7 @@ function App() {
         };
     }, [animationIndex, isAnimating, solverPath.length, speed]);
 
-    useEffect(() => {
-        saveStoredWinners(recentWinners);
-    }, [recentWinners]);
+    // Removed saveStoredWinners effect; always use backend data
 
     useEffect(() => {
         void loadWinnersFromDb();
@@ -226,8 +193,7 @@ function App() {
         try {
             const winners = await APIService.getWinners();
             const normalized = winners
-                .filter((item: WinnerRecordResponse) => typeof item.player === 'string' && typeof item.pathLength === 'number')
-                .slice(0, MAX_WINNERS);
+                .filter((item: WinnerRecordResponse) => typeof item.player === 'string' && typeof item.pathLength === 'number');
             setRecentWinners(normalized);
         } catch {
             setLeaderboardError('Could not load leaderboard from database. Showing local history.');
@@ -243,12 +209,11 @@ function App() {
             const scores = await APIService.getScores();
             const normalized = scores
                 .filter((item: ScoreRecordResponse) => typeof item.player === 'string' && typeof item.score === 'number')
-                .slice(0, 30)
                 .map((item: ScoreRecordResponse) => ({
                     player: item.player,
                     size: item.size,
                     start: item.start,
-                    score: item.score,
+                    moves: item.score, // 'score' in API is actually move count
                     result: item.result,
                     timestamp: item.timestamp,
                 }));
@@ -269,8 +234,8 @@ function App() {
             result,
         }).then(() => {
             void loadScoresFromDb();
-        }).catch(() => {
-            // Best effort only.
+        }).catch((err) => {
+            setLeaderboardError('Failed to save score: ' + (err?.message || 'Unknown error'));
         });
     }
 
@@ -289,7 +254,8 @@ function App() {
             sequence: path.map((step) => positionLabel(step)),
         };
 
-        setRecentWinners((current: WinnerRecord[]) => [winner, ...current].slice(0, MAX_WINNERS));
+        // No local state limit; backend will provide all winners
+        setRecentWinners((current: WinnerRecord[]) => [winner, ...current]);
 
         void APIService.saveWinner({
             player: winner.player,
@@ -300,8 +266,8 @@ function App() {
             solver: source,
         }).then(() => {
             void loadWinnersFromDb();
-        }).catch(() => {
-            // Keep gameplay smooth even if backend is temporarily unavailable.
+        }).catch((err) => {
+            setLeaderboardError('Failed to save winner: ' + (err?.message || 'Unknown error'));
         });
     }
 
@@ -422,12 +388,6 @@ function App() {
             return;
         }
 
-        const isLegalMove = legalMoves.some((move) => move.row === cell.row && move.col === cell.col);
-        if (!isLegalMove) {
-            setStatus(`Illegal move to ${positionLabel(cell)}. Pick one of the highlighted legal moves.`);
-            return;
-        }
-
         const nextPath = [...manualPath, cell];
         setManualPath(nextPath);
 
@@ -465,17 +425,13 @@ function App() {
     }
 
     function startNewRound() {
-        const configuredStart = createStartPosition(
-            boardSize,
-            parseBoardIndex(startRow),
-            parseBoardIndex(startCol),
-        );
+        const randomStart = randomStartPosition(boardSize);
         if (mode === 'solver') {
-            generateSolverTour(configuredStart);
+            generateSolverTour(randomStart);
             return;
         }
 
-        beginManualTour(configuredStart);
+        beginManualTour(randomStart);
     }
 
     function enterGameFromMenu() {
@@ -563,18 +519,21 @@ function App() {
                             </label>
                             {playerNameError ? <p className="validation-message">{playerNameError}</p> : null}
                             <label>
-                                Board size
-                                <select value={boardSize} onChange={(event) => setBoardSize(Number(event.target.value) as BoardSize)}>
-                                    <option value={8}>8 x 8</option>
-                                    <option value={16}>16 x 16</option>
-                                </select>
+                                Board Size
+                                <div className="input-cover">
+                                    <select value={boardSize} onChange={(event) => setBoardSize(Number(event.target.value) as BoardSize)}>
+                                        <option value={8}>8 × 8 (Easy)</option>
+                                        <option value={16}>16 × 16 (Hard)</option>
+                                    </select>
+                                </div>
+                                <span className="input-helper">8 × 8 is recommended for new players</span>
                             </label>
                             <div className="menu-actions">
                                 <button className="primary-button" type="button" onClick={enterGameFromMenu} disabled={!trimmedPlayerName}>
                                     Start Playing
                                 </button>
                                 <button className="secondary-button" type="button" onClick={toggleLeaderboard}>
-                                    {showLeaderboard ? 'Hide Player Scores' : 'Show Player Scores'}
+                                    {showLeaderboard ? 'Hide Scores' : 'Show Scores'}
                                 </button>
                                 <button className="secondary-button" type="button" onClick={backToGameHubDashboard}>
                                     Back to Game Hub
@@ -625,7 +584,7 @@ function App() {
                                                 <tr key={`${row.timestamp}-${row.player}-${row.result}`}>
                                                     <td>{row.player}</td>
                                                     <td>{row.size}x{row.size}</td>
-                                                    <td>{row.score} ({row.result})</td>
+                                                    <td>{row.moves} ({row.result})</td>
                                                     <td>{row.start}</td>
                                                     <td>{formatTimestamp(row.timestamp)}</td>
                                                 </tr>
@@ -647,130 +606,102 @@ function App() {
             <div className="ambient ambient-right" />
 
             <main className="page-shell">
-                <section className="hero card">
-                    <div>
-                        <img className="hero-knight-icon" src={knightIcon} alt="Knight icon" />
-                        <p className="eyebrow">React Knight's Tour</p>
-                        <h1>A calmer, clearer way to play the Knight's Tour.</h1>
-                        <p className="hero-copy">
-                            Start with one square, then either follow the legal moves yourself or let the solver animate a full tour.
-                            The board stays front and center, and the advanced options stay out of your way.
-                        </p>
-
-                        <div className="hero-actions">
+                <section className="clean-game-layout">
+                    <div className="game-header">
+                        <div className="game-title-section">
+                            <h1>Knight's Tour</h1>
+                        </div>
+                        <div className="game-mode-selector">
+                            <button
+                                className={`mode-button ${mode === 'manual' ? 'active' : ''}`}
+                                type="button"
+                                onClick={() => setMode('manual')}
+                            >
+                                Manual
+                            </button>
+                            <button
+                                className={`mode-button ${mode === 'solver' ? 'active' : ''}`}
+                                type="button"
+                                onClick={() => setMode('solver')}
+                            >
+                                Auto Solver
+                            </button>
+                        </div>
+                        <div className="game-actions">
                             <button className="primary-button" type="button" onClick={startNewRound}>
-                                {mode === 'manual' ? 'Start Tour' : 'Generate Auto Tour'}
+                                {mode === 'manual' ? 'Start Tour' : 'Generate Tour'}
+                            </button>
+                            <button className="secondary-button" type="button" onClick={() => setShowInstructions(true)}>
+                                Instructions
+                            </button>
+                            <button className="secondary-button" type="button" onClick={() => setShowSettings(true)}>
+                                Settings
                             </button>
                             <button className="secondary-button" type="button" onClick={clearBoard}>
-                                Reset Board
+                                Reset
                             </button>
                             <button className="secondary-button" type="button" onClick={backToMenu}>
-                                Back to Menu
+                                Menu
                             </button>
                         </div>
                     </div>
 
-                    <div className="hero-guide">
-                        {GUIDE_STEPS.map((step, index) => (
-                            <article key={step.title} className="guide-step">
-                                <span>{index + 1}</span>
-                                <div>
-                                    <strong>{step.title}</strong>
-                                    <p>{step.text}</p>
-                                </div>
-                            </article>
-                        ))}
-                    </div>
-                </section>
-
-                <section className="workspace-grid">
-                    <div className="main-column">
-                        <SetupPanel
-                            boardSize={boardSize}
-                            solver={solver}
-                            mode={mode}
-                            isSolving={isSolving}
-                            startRow={startRow}
-                            startCol={startCol}
-                            playerName={playerName}
-                            nodeLimit={nodeLimit}
-                            onBoardSizeChange={setBoardSize}
-                            onSolverChange={setSolver}
-                            onModeChange={setMode}
-                            onStartRowChange={setStartRow}
-                            onStartColChange={setStartCol}
-                            onPlayerNameChange={setPlayerName}
-                            onNodeLimitChange={setNodeLimit}
-                            onStartNewRound={startNewRound}
-                            onUndoMove={undoMove}
-                            onClearBoard={clearBoard}
-                        />
-
-                        <section className="card board-card">
-                            <div className="section-head board-head">
-                                <div>
-                                    <p className="card-kicker">Board</p>
-                                    <h2>{mode === 'manual' ? 'Click the glowing squares' : 'Watch the route animate'}</h2>
-                                    <p className="board-note">
-                                        {mode === 'manual'
-                                            ? 'If you have not started yet, click any square on the board to set the start instantly.'
-                                            : 'The board is animated step by step so the whole tour is easy to follow.'}
-                                    </p>
-                                </div>
-
-                                <div className="board-meta">
-                                    <div>
-                                        <span>Current square</span>
+                    <div className="game-content">
+                        <div className="board-section">
+                            <section className="card board-card">
+                                <div className="board-hud">
+                                    <div className="info-stat">
+                                        <span>Current</span>
                                         <strong>{positionLabel(currentPosition)}</strong>
                                     </div>
-                                    <div>
+                                    <div className="info-stat">
                                         <span>Coverage</span>
                                         <strong>{Math.round(currentCoverage * 100)}%</strong>
                                     </div>
-                                    <label className="speed-control">
-                                        Speed
-                                        <input
-                                            type="range"
-                                            min="5"
-                                            max="120"
-                                            value={speed}
-                                            onChange={(event) => setSpeed(Number(event.target.value))}
-                                        />
-                                    </label>
+                                    <div className="info-stat">
+                                        <span>Moves</span>
+                                        <strong>{activePath.length}</strong>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <Board
-                                boardSize={boardSize}
-                                mode={mode}
-                                startPosition={startPosition}
-                                activePath={activePath}
-                                currentPosition={currentPosition}
-                                legalMoves={legalMoves}
-                                manualPathLength={manualPath.length}
-                                onCellClick={handleCellClick}
-                            />
+                                <Board
+                                    boardSize={boardSize}
+                                    mode={mode}
+                                    startPosition={startPosition}
+                                    activePath={activePath}
+                                    currentPosition={currentPosition}
+                                    legalMoves={legalMoves}
+                                    manualPathLength={manualPath.length}
+                                    onCellClick={handleCellClick}
+                                />
 
-                            <div className="legend">
-                                <span><i className="legend-start" /> Start</span>
-                                <span><i className="legend-current" /> Current</span>
-                                <span><i className="legend-legal" /> Legal move</span>
-                                <span><i className="legend-visited" /> Visited</span>
-                            </div>
-                        </section>
+                                <div className="legend">
+                                    <span><i className="legend-start" /> Start</span>
+                                    <span><i className="legend-current" /> Current</span>
+                                    <span><i className="legend-legal" /> Legal move</span>
+                                    <span><i className="legend-visited" /> Visited</span>
+                                </div>
+
+                                <p className="board-note">
+                                    Click a highlighted square to continue. The current square is marked with “You are here”,
+                                    and the move count above the board updates as you play.
+                                </p>
+                            </section>
+                        </div>
+
+                        <StatusPanel
+                            status={status}
+                            roundResult={roundResult}
+                            currentPosition={currentPosition}
+                            currentCoverage={currentCoverage}
+                            isComplete={isComplete}
+                            legalMovesLength={legalMoves.length}
+                            startPosition={startPosition}
+                            activePath={activePath}
+                            recentWinners={recentWinners}
+                            recentScores={recentScores}
+                        />
                     </div>
-
-                    <StatusPanel
-                        status={status}
-                        roundResult={roundResult}
-                        currentPosition={currentPosition}
-                        currentCoverage={currentCoverage}
-                        isComplete={isComplete}
-                        legalMovesLength={legalMoves.length}
-                        startPosition={startPosition}
-                        activePath={activePath}
-                        recentWinners={recentWinners}
-                    />
                 </section>
             </main>
 
@@ -785,6 +716,140 @@ function App() {
                             </button>
                             <button className="primary-button" type="button" onClick={confirmBackToMenu}>
                                 Leave Round
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            ) : null}
+
+            {showInstructions ? (
+                <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="instructions-title">
+                    <div className="modal-card instructions-modal">
+                        <div className="modal-header">
+                            <h2 id="instructions-title">How to Play</h2>
+                            <button
+                                className="close-button"
+                                type="button"
+                                onClick={() => setShowInstructions(false)}
+                                aria-label="Close instructions"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        <div className="instructions-content">
+                            {GUIDE_STEPS.map((step, index) => (
+                                <article key={step.title} className="instruction-step">
+                                    <span className="step-number">{index + 1}</span>
+                                    <div>
+                                        <strong>{step.title}</strong>
+                                        <p>{step.text}</p>
+                                    </div>
+                                </article>
+                            ))}
+                        </div>
+                        <div className="modal-actions">
+                            <button className="primary-button" type="button" onClick={() => setShowInstructions(false)}>
+                                Got it
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            ) : null}
+
+            {showSettings ? (
+                <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+                    <div className="modal-card settings-modal">
+                        <div className="modal-header">
+                            <h2 id="settings-title">Game Settings</h2>
+                            <button
+                                className="close-button"
+                                type="button"
+                                onClick={() => setShowSettings(false)}
+                                aria-label="Close settings"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        <div className="settings-content">
+                            <div className="settings-group">
+                                <label>
+                                    <span className="setting-label">Board Size</span>
+                                    <select value={boardSize} onChange={(event) => setBoardSize(Number(event.target.value) as BoardSize)}>
+                                        <option value={8}>8 × 8 (Easy)</option>
+                                        <option value={16}>16 × 16 (Hard)</option>
+                                    </select>
+                                </label>
+                            </div>
+
+                            <div className="settings-group">
+                                <label>
+                                    <span className="setting-label">Solver Algorithm</span>
+                                    <select
+                                        value={solver}
+                                        onChange={(event) => setSolver(event.target.value as SolverMode)}
+                                        disabled={boardSize === 16}
+                                    >
+                                        <option value="warnsdorff">Warnsdorff Heuristic</option>
+                                        <option value="backtracking">Backtracking (8x8 only)</option>
+                                    </select>
+                                </label>
+                                {boardSize === 16 && <p className="setting-hint">Backtracking disabled for 16×16 boards (too slow)</p>}
+                            </div>
+
+                            <div className="settings-group">
+                                <label>
+                                    <span className="setting-label">Start Position</span>
+                                    <div className="position-inputs">
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            max={boardSize}
+                                            value={startRow}
+                                            onChange={(event) => setStartRow(event.target.value)}
+                                            placeholder="Row"
+                                        />
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            max={boardSize}
+                                            value={startCol}
+                                            onChange={(event) => setStartCol(event.target.value)}
+                                            placeholder="Col"
+                                        />
+                                    </div>
+                                </label>
+                            </div>
+
+                            <div className="settings-group">
+                                <label>
+                                    <span className="setting-label">Animation Speed: {speed}</span>
+                                    <input
+                                        type="range"
+                                        min="5"
+                                        max="120"
+                                        value={speed}
+                                        onChange={(event) => setSpeed(Number(event.target.value))}
+                                    />
+                                </label>
+                            </div>
+
+                            <div className="settings-group">
+                                <label>
+                                    <span className="setting-label">Node Limit (for Backtracking)</span>
+                                    <input
+                                        type="number"
+                                        value={nodeLimit}
+                                        onChange={(event) => setNodeLimit(event.target.value)}
+                                        placeholder="Node limit"
+                                    />
+                                </label>
+                                <p className="setting-hint">Default: 3,500,000. Lower values = faster but may not find solution</p>
+                            </div>
+                        </div>
+
+                        <div className="modal-actions">
+                            <button className="primary-button" type="button" onClick={() => setShowSettings(false)}>
+                                Done
                             </button>
                         </div>
                     </div>

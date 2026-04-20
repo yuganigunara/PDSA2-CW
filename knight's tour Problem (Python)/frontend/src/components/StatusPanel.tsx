@@ -1,5 +1,14 @@
 import { positionLabel, type Position, type WinnerRecord } from '../knightTour';
 
+interface RoundScoreView {
+    player: string;
+    size: number;
+    start: string;
+    result: 'win' | 'lose' | 'draw';
+    moves: number;
+    timestamp: string;
+}
+
 interface StatusPanelProps {
     status: string;
     roundResult: 'win' | 'lose' | 'draw' | null;
@@ -10,6 +19,7 @@ interface StatusPanelProps {
     startPosition: Position;
     activePath: Position[];
     recentWinners: WinnerRecord[];
+    recentScores: RoundScoreView[];
 }
 
 function formatTimestamp(value: string): string {
@@ -36,6 +46,7 @@ function StatusPanel({
     startPosition,
     activePath,
     recentWinners,
+    recentScores,
 }: StatusPanelProps) {
     const resultLabel = roundResult === 'win'
         ? 'Win'
@@ -106,19 +117,20 @@ function StatusPanel({
 
             <section className="card info-card winners-card">
                 <p className="card-kicker">Saved</p>
-                <h2>Recent tours</h2>
+                <h2>Recent results</h2>
                 <div className="winner-list">
-                    {recentWinners.length === 0 ? (
-                        <p className="muted">No saved tours yet. Complete one tour and it will appear here.</p>
-                    ) : recentWinners.map((winner) => (
-                        <article key={`${winner.timestamp}-${winner.player}`} className="winner-item">
+                    {recentScores.length === 0 ? (
+                        <p className="muted">No saved results yet. Complete a round and it will appear here.</p>
+                    ) : recentScores.slice().reverse().map((score, idx) => (
+                        <article key={`${score.timestamp}-${score.player}-${idx}`} className={`winner-item result-${score.result}`}>
                             <div>
-                                <strong>{winner.player}</strong>
-                                <span>{winner.size} x {winner.size} from {winner.start}</span>
+                                <strong>{score.player}</strong>
+                                <span>{score.size} x {score.size} from {score.start}</span>
                             </div>
                             <div>
-                                <strong>{winner.pathLength} moves</strong>
-                                <span>{formatTimestamp(winner.timestamp)}</span>
+                                <strong>{score.moves} moves</strong>
+                                <span>{score.result.charAt(0).toUpperCase() + score.result.slice(1)}</span>
+                                <span>{formatTimestamp(score.timestamp)}</span>
                             </div>
                         </article>
                     ))}

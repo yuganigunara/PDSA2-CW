@@ -17,9 +17,9 @@ CONFIG_PATH = ROOT_DIR / "game_hub_config.json"
 
 DEFAULT_GAMES = [
     {
-        "name": "Snake and Ladder",
+        "name": "snake_ladder",
         "cwd": "snake",
-        "command": ["{python}", "main.py"],
+        "command": ["{python}", "run_snake_ladder.py"],
         "enabled": True,
         "needs_src_path": False,
     },
@@ -31,26 +31,27 @@ DEFAULT_GAMES = [
         "needs_src_path": False,
     },
     {
-        "name": "Traffic Simulation",
+        "name": "Traffic simulation Problem",
         "cwd": "Traffic simulation Problem",
         "command": ["{python}", "run.py"],
         "enabled": True,
         "needs_src_path": False,
     },
     {
-        "name": "Game Slot 4",
-        "cwd": "",
-        "command": [],
-        "enabled": False,
+        "name": "Sixteen Queens (Branch)",
+        "cwd": "sixteen queens",
+        "command": ["{python}", "run_branch.py"],
+        "enabled": True,
         "needs_src_path": False,
     },
+   
     {
-        "name": "Game Slot 5",
-        "cwd": "",
-        "command": [],
-        "enabled": False,
+        "name": "Minimum Cost Studio",
+        "cwd": "minimum,_cost_problem/server",
+        "command": ["{python}","uvicorn", "app:app", "--host", "127.0.0.1", "--port", "8006"],
+        "enabled": True,
         "needs_src_path": False,
-    },
+    }
 ]
 
 
@@ -226,6 +227,10 @@ def launch_game(index: int) -> dict[str, Any]:
     command = [part.replace("{python}", sys.executable) for part in command]
 
     env = dict(os.environ)
+    # Prevent run_studio.py from opening an extra browser tab when launched from Game Hub.
+    if any("run_studio.py" in str(part).lower() for part in command):
+        env["GAME_HUB_LAUNCH"] = "1"
+
     python_paths: list[str] = [str(cwd)]
     if game.get("needs_src_path"):
         python_paths.append(str(cwd / "src"))
@@ -235,6 +240,23 @@ def launch_game(index: int) -> dict[str, Any]:
     env["PYTHONPATH"] = joined if not current else f"{joined};{current}"
 
     creationflags = 0
+
+    game_name = str(game.get("name", "")).lower()
+    command_text = " ".join(str(part).lower() for part in command)
+    web_url = None
+    # Only Knight's Tour Studio gets 5173, Minimum Cost Studio gets 5187
+    if (
+        "knight" in game_name and "studio" in game_name
+    ):
+        web_url = "http://localhost:5173/"
+    elif (
+        "minimum cost" in game_name and "studio" in game_name
+    ):
+        web_url = "http://localhost:5187/"
+    elif cwd_rel.lower() == "traffic simulation problem" or (
+        "run.py" in command_text and "traffic" in game_name
+    ):
+        web_url = "http://127.0.0.1:5000/"
 
     debug_info = {
         "python_exe": sys.executable,
@@ -254,13 +276,15 @@ def launch_game(index: int) -> dict[str, Any]:
             "message": f"Launched {game.get('name', 'game')}",
             "pid": process.pid,
             "resolved_command": command,
+            "web_url": web_url,
             "debug": debug_info,
         }
     except Exception as exc:
-        debug_info["error"] = str(exc)
-        return {
-            "message": "Launch failed",
-            "error": str(exc),
-            "debug": debug_info,
-            "pid": None,
-        }
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "message": "Launch failed",
+                "error": str(exc),
+                "debug": debug_info,
+            },
+        )

@@ -1,9 +1,9 @@
 /**
  * API service for Knight's Tour backend.
- * Communicates with Flask API running on port 5000.
+ * Communicates with Flask API running on port 5001.
  */
 
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = 'http://localhost:5001/api';
 
 export interface WinnerRecordResponse {
     player: string;
