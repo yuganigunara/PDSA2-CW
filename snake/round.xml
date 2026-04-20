@@ -1,0 +1,85 @@
+<Objs Version="1.1.0.1" xmlns="http://schemas.microsoft.com/powershell/2004/04">
+  <Obj RefId="0">
+    <TN RefId="0">
+      <T>System.Management.Automation.PSCustomObject</T>
+      <T>System.Object</T>
+    </TN>
+    <MS>
+      <S N="player_name">jbhnn</S>
+      <Obj N="board" RefId="1">
+        <TNRef RefId="0" />
+        <MS>
+          <I32 N="size">8</I32>
+          <Obj N="ladders" RefId="2">
+            <TNRef RefId="0" />
+            <MS>
+              <I32 N="30">58</I32>
+              <I32 N="36">60</I32>
+              <I32 N="12">38</I32>
+              <I32 N="33">44</I32>
+              <I32 N="54">63</I32>
+              <I32 N="22">46</I32>
+            </MS>
+          </Obj>
+          <Obj N="snakes" RefId="3">
+            <TNRef RefId="0" />
+            <MS>
+              <I32 N="10">4</I32>
+              <I32 N="17">6</I32>
+              <I32 N="49">26</I32>
+              <I32 N="15">1</I32>
+              <I32 N="56">8</I32>
+              <I32 N="52">40</I32>
+            </MS>
+          </Obj>
+          <I32 N="goal">64</I32>
+          <Obj N="jumps" RefId="4">
+            <TNRef RefId="0" />
+            <MS>
+              <I32 N="30">58</I32>
+              <I32 N="36">60</I32>
+              <I32 N="12">38</I32>
+              <I32 N="33">44</I32>
+              <I32 N="54">63</I32>
+              <I32 N="22">46</I32>
+              <I32 N="10">4</I32>
+              <I32 N="17">6</I32>
+              <I32 N="49">26</I32>
+              <I32 N="15">1</I32>
+              <I32 N="56">8</I32>
+              <I32 N="52">40</I32>
+            </MS>
+          </Obj>
+        </MS>
+      </Obj>
+      <Obj N="bfs" RefId="5">
+        <TNRef RefId="0" />
+        <MS>
+          <I32 N="minimum_throws">6</I32>
+          <I32 N="time_ns">31800</I32>
+        </MS>
+      </Obj>
+      <Obj N="dp" RefId="6">
+        <TNRef RefId="0" />
+        <MS>
+          <I32 N="minimum_throws">6</I32>
+          <I32 N="time_ns">105100</I32>
+        </MS>
+      </Obj>
+      <Obj N="options" RefId="7">
+        <TN RefId="1">
+          <T>System.Object[]</T>
+          <T>System.Array</T>
+          <T>System.Object</T>
+        </TN>
+        <LST>
+          <I32>5</I32>
+          <I32>6</I32>
+          <I32>7</I32>
+        </LST>
+      </Obj>
+      <I32 N="correct_answer">6</I32>
+      <S N="outcome">PENDING</S>
+    </MS>
+  </Obj>
+</Objs>
