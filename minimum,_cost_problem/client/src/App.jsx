@@ -2,9 +2,10 @@ import { useState, useEffect, useRef } from "react";
 import "./App.css";
 
 const API = "http://localhost:8000";
+const GAME_HUB_URL = "http://localhost:5173/";
 
 // PLAY ROUND 
-function PlayRound() {
+function PlayRound({ playerName }) {
   const [nInput, setNInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
@@ -26,7 +27,7 @@ function PlayRound() {
     setProgress(0);
     setResult(null);
     const n = nInput.trim() ? parseInt(nInput) : null;
-    addLog(`► Starting Round #${roundCount}${n ? ` with N=${n}` : " with random N"}...`, "cmd");
+    addLog(`► ${playerName || "Player"} starting Round #${roundCount}${n ? ` with N=${n}` : " with random N"}...`, "cmd");
 
     // Fake progress bar
     const interval = setInterval(() => setProgress((p) => Math.min(p + 12, 90)), 80);
@@ -35,7 +36,7 @@ function PlayRound() {
       const res = await fetch(`${API}/api/game/play`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ n }),
+        body: JSON.stringify({ n, player_name: playerName }),
       });
       const data = await res.json();
       clearInterval(interval);
@@ -289,6 +290,7 @@ function History() {
           <thead>
             <tr>
               <th>#</th>
+              <th>Player</th>
               <th>N</th>
               <th>Hungarian $</th>
               <th>Hung. Time</th>
@@ -300,11 +302,12 @@ function History() {
           </thead>
           <tbody>
             {rows.length === 0 && (
-              <tr><td colSpan={8} style={{ textAlign: "center", opacity: 0.5 }}>No rounds played yet.</td></tr>
+              <tr><td colSpan={9} style={{ textAlign: "center", opacity: 0.5 }}>No rounds played yet.</td></tr>
             )}
             {rows.map((r) => (
               <tr key={r.id}>
                 <td className="accent">{r.id}</td>
+                <td>{r.player_name || "Player"}</td>
                 <td>{r.n}</td>
                 <td className="hungarian-color">${parseFloat(r.hungarian_cost).toFixed(2)}</td>
                 <td>{parseFloat(r.hungarian_time_ms).toFixed(4)} ms</td>
@@ -520,9 +523,151 @@ function UnitTests() {
   );
 }
 
+function EntryMenu({ playerName, setPlayerName, onStart, onBackToHub, error }) {
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [leaderboard, setLeaderboard] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState("");
+
+  useEffect(() => {
+    if (!showLeaderboard) return;
+
+    setLoading(true);
+    setLoadError("");
+    fetch(`${API}/api/game/leaderboard?limit=10`)
+      .then((r) => {
+        if (!r.ok) throw new Error("Could not load leaderboard");
+        return r.json();
+      })
+      .then((rows) => setLeaderboard(Array.isArray(rows) ? rows : []))
+      .catch((e) => setLoadError(e.message))
+      .finally(() => setLoading(false));
+  }, [showLeaderboard]);
+
+  return (
+    <div className="entry-shell">
+      <section className="entry-card">
+        <p className="section-label">Minimum Cost Assignment</p>
+        <h1 className="entry-title">Enter To Start</h1>
+        <p className="entry-subtitle">
+          Add your name, then continue to the game dashboard.
+        </p>
+
+        <label className="field-label" htmlFor="playerNameInput">Player name</label>
+        <input
+          id="playerNameInput"
+          className="n-input"
+          type="text"
+          maxLength={40}
+          placeholder="Your name"
+          value={playerName}
+          onChange={(e) => setPlayerName(e.target.value)}
+        />
+
+        {error ? <p className="entry-error">{error}</p> : null}
+
+        <div className="entry-actions">
+          <button className="run-btn" onClick={onStart}>Enter Game</button>
+          <button className="random-btn" onClick={() => setShowLeaderboard((v) => !v)}>
+            {showLeaderboard ? "Hide Leaderboard" : "Show Leaderboard"}
+          </button>
+          <button className="random-btn" onClick={onBackToHub}>Back to Game Hub</button>
+        </div>
+
+        {showLeaderboard ? (
+          <div className="entry-leaderboard">
+            <div className="section-label">Leaderboard</div>
+            {loading ? <p className="muted-text">Loading leaderboard...</p> : null}
+            {loadError ? <p className="entry-error">{loadError}</p> : null}
+            {!loading && !loadError && leaderboard.length === 0 ? (
+              <p className="muted-text">No players yet.</p>
+            ) : null}
+            {!loading && !loadError && leaderboard.length > 0 ? (
+              <div className="history-table-wrap entry-leaderboard-table">
+                <table className="history-table">
+                  <thead>
+                    <tr>
+                      <th>Player</th>
+                      <th>Rounds</th>
+                      <th>Best Hungarian $</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {leaderboard.map((row) => (
+                      <tr key={row.player_name}>
+                        <td>{row.player_name}</td>
+                        <td>{row.rounds_played}</td>
+                        <td className="hungarian-color">${Number(row.best_hungarian_cost || 0).toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+      </section>
+    </div>
+  );
+}
+
 //  ROOT APP
 export default function App() {
   const [tab, setTab] = useState("play");
+  const [playerName, setPlayerName] = useState("");
+  const [screen, setScreen] = useState("entry");
+  const [entryError, setEntryError] = useState("");
+
+  const resolvedPlayer = playerName.trim() || "Player";
+
+  const enterGame = () => {
+    if (!playerName.trim()) {
+      setEntryError("Please enter your name to continue.");
+      return;
+    }
+    setEntryError("");
+    setScreen("game");
+  };
+
+  const goBackToHub = () => {
+    const candidates = [
+      GAME_HUB_URL,
+      "http://localhost:5177/",
+      "http://localhost:5176/",
+    ];
+
+    const fromReferrer = document.referrer && document.referrer.includes("localhost:517")
+      ? document.referrer
+      : null;
+    const ordered = fromReferrer ? [fromReferrer, ...candidates.filter((u) => u !== fromReferrer)] : candidates;
+
+    const probeAndGo = async () => {
+      for (const url of ordered) {
+        try {
+          await fetch(url, { method: "GET", mode: "no-cors", cache: "no-store" });
+          window.location.assign(url);
+          return;
+        } catch {
+          // try next candidate
+        }
+      }
+      window.location.assign(ordered[0]);
+    };
+
+    void probeAndGo();
+  };
+
+  if (screen === "entry") {
+    return (
+      <EntryMenu
+        playerName={playerName}
+        setPlayerName={setPlayerName}
+        onStart={enterGame}
+        onBackToHub={goBackToHub}
+        error={entryError}
+      />
+    );
+  }
 
   return (
     <div className="app-root">
@@ -532,7 +677,10 @@ export default function App() {
           <span className="header-diamond">◆</span>
           <span className="header-title">MINIMUM COST TASK ASSIGNMENT</span>
         </div>
-        <div className="header-right">PDSA Coursework</div>
+        <div className="header-right">
+          <span className="header-player">Player: {resolvedPlayer}</span>
+          <button className="header-back-btn" onClick={goBackToHub}>Back to menu</button>
+        </div>
       </header>
 
       {/* Tabs */}
@@ -550,7 +698,7 @@ export default function App() {
 
       {/* Content */}
       <main className="app-main">
-        {tab === "play" && <PlayRound />}
+        {tab === "play" && <PlayRound playerName={resolvedPlayer} />}
         {tab === "history" && <History />}
         {tab === "tests" && <UnitTests />}
       </main>

@@ -33,8 +33,9 @@
         "name": "Sixteen Queens (Branch)",
         "cwd": "sixteen queens",
         "command": [
-            "{python}",
-            "."
+            "cmd",
+            "/c",
+            "run_sixteen_queens.bat"
         ],
         "enabled": true,
         "needs_src_path": false

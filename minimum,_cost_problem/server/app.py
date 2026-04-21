@@ -32,6 +32,7 @@ def init_db():
     conn.execute("""
         CREATE TABLE IF NOT EXISTS game_rounds (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            player_name TEXT NOT NULL DEFAULT 'Player',
             n INTEGER NOT NULL,
             cost_matrix TEXT NOT NULL,
             hungarian_assignment TEXT,
@@ -44,6 +45,11 @@ def init_db():
             played_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
+
+    columns = {row[1] for row in conn.execute("PRAGMA table_info(game_rounds)").fetchall()}
+    if "player_name" not in columns:
+        conn.execute("ALTER TABLE game_rounds ADD COLUMN player_name TEXT NOT NULL DEFAULT 'Player'")
+
     conn.commit()
     conn.close()
 
@@ -100,10 +106,12 @@ def greedy_algorithm(cost_matrix: list[list[float]]) -> tuple[list[int], float, 
 
 class GameRequest(BaseModel):
     n: Optional[int] = None  # if None, random between 50–100
+    player_name: Optional[str] = None
 
 
 class GameResult(BaseModel):
     round_id: int
+    player_name: str
     n: int
     hungarian_assignment: list[int]
     hungarian_cost: float
@@ -122,7 +130,7 @@ def root():
 
 @app.post("/api/game/play", response_model=GameResult)
 def play_game(req: GameRequest):
-   
+    player_name = (req.player_name or "Player").strip() or "Player"
     n = req.n if req.n and 50 <= req.n <= 100 else random.randint(50, 100)
 
     # Generate random cost matrix
@@ -141,10 +149,11 @@ def play_game(req: GameRequest):
     conn = get_db()
     cursor = conn.execute(
         """INSERT INTO game_rounds
-           (n, cost_matrix, hungarian_assignment, hungarian_cost, hungarian_time_ms,
+           (player_name, n, cost_matrix, hungarian_assignment, hungarian_cost, hungarian_time_ms,
             greedy_assignment, greedy_cost, greedy_time_ms, winner)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (
+            player_name,
             n,
             json.dumps(cost_matrix),
             json.dumps(h_assign),
@@ -165,6 +174,7 @@ def play_game(req: GameRequest):
 
     return GameResult(
         round_id=round_id,
+        player_name=player_name,
         n=n,
         hungarian_assignment=h_assign,
         hungarian_cost=h_cost,
@@ -181,7 +191,7 @@ def get_history(limit: int = 10):
     # Fetch recent game rounds from the db
     conn = get_db()
     rows = conn.execute(
-        """SELECT id, n, hungarian_cost, hungarian_time_ms,
+        """SELECT id, player_name, n, hungarian_cost, hungarian_time_ms,
                   greedy_cost, greedy_time_ms, winner, played_at
            FROM game_rounds ORDER BY id DESC LIMIT ?""",
         (limit,),
@@ -233,6 +243,31 @@ def get_stats():
     conn.close()
 
     return dict(stats)
+
+
+@app.get("/api/game/leaderboard")
+def get_leaderboard(limit: int = 10):
+    conn = get_db()
+    rows = conn.execute(
+        """
+        SELECT
+            player_name,
+            COUNT(*) as rounds_played,
+            ROUND(AVG(hungarian_cost), 2) as avg_hungarian_cost,
+            ROUND(AVG(greedy_cost), 2) as avg_greedy_cost,
+            ROUND(MIN(hungarian_cost), 2) as best_hungarian_cost,
+            ROUND(AVG(hungarian_time_ms), 3) as avg_hungarian_time_ms,
+            ROUND(AVG(greedy_time_ms), 3) as avg_greedy_time_ms,
+            MAX(played_at) as last_played
+        FROM game_rounds
+        GROUP BY player_name
+        ORDER BY rounds_played DESC, last_played DESC
+        LIMIT ?
+        """,
+        (limit,),
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
 
 # unit tests
 class TestAlgorithms(unittest.TestCase):

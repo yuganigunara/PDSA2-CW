@@ -4,11 +4,11 @@ import os
 import socket
 import subprocess
 import sys
-import webbrowser
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 FRONTEND = ROOT / "frontend"
+KNIGHT_FRONTEND_PORT = 5174
 
 
 def is_port_open(host: str, port: int) -> bool:
@@ -39,11 +39,13 @@ def main() -> None:
     if not is_port_open("127.0.0.1", 5001):
         launch_hidden([py_exe, "run_api.py"], ROOT)
 
-    if not is_port_open("127.0.0.1", 5173):
-        launch_hidden(["cmd", "/c", "npm run dev -- --host localhost --port 5173"], FRONTEND)
+    if not is_port_open("127.0.0.1", KNIGHT_FRONTEND_PORT):
+        launch_hidden(
+            ["cmd", "/c", f"npm run dev -- --host localhost --port {KNIGHT_FRONTEND_PORT} --strictPort"],
+            FRONTEND,
+        )
 
-    if os.environ.get("GAME_HUB_LAUNCH") != "1":
-        webbrowser.open("http://localhost:5173/")
+    # Browser navigation is handled by Game Hub UI.
 
 
 if __name__ == "__main__":

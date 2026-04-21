@@ -103,12 +103,24 @@ function App() {
         const name = String(game?.name || "").toLowerCase();
         const command = (game?.command || []).join(" ").toLowerCase();
 
-        if (name.includes("traffic") || command.includes("traffic simulation") || command.includes("run.py")) {
-            return "http://127.0.0.1:5000/";
+        if (name.includes("snake")) {
+            return "http://localhost:5176/";
         }
 
-        if (name.includes("studio") || command.includes("run_studio.py")) {
-            return "http://localhost:5173/";
+        if (name.includes("knight")) {
+            return "http://localhost:5174/";
+        }
+
+        if (name.includes("sixteen")) {
+            return "http://localhost:5190/";
+        }
+
+        if (name.includes("minimum cost")) {
+            return "http://localhost:5187/";
+        }
+
+        if (name.includes("traffic") || command.includes("traffic simulation") || command.includes("run.py")) {
+            return "http://127.0.0.1:5000/";
         }
 
         return "";
@@ -152,7 +164,8 @@ function App() {
                 setNotice(`${data.message} (PID: ${data.pid})`);
                 setLaunchingIndex(-1);
 
-                const quickUrl = data?.web_url || getQuickLaunchUrl(game);
+                // Prefer client-side mapping first so each game keeps its dedicated port.
+                const quickUrl = getQuickLaunchUrl(game) || data?.web_url;
                 if (quickUrl) {
                     const ready = await waitForHttpReady(quickUrl);
                     if (ready) {
@@ -215,28 +228,6 @@ function App() {
                 {error && <p className="message error">{error}</p>}
                 {notice && <p className="message ok">{notice}</p>}
 
-
-
-                <section className="quick-row">
-                    <button className="tab-btn" onClick={launchLastPlayed}>
-                        Play Last Game
-                    </button>
-                    <button
-                        className="tab-btn"
-                        onClick={() => {
-                            setQuery("");
-                        }}
-                    >
-                        Clear Filters
-                    </button>
-                    <button
-                        className="tab-btn logs-btn"
-                        onClick={() => window.open("/logs.html", "_blank")}
-                    >
-                        📊 View Logs
-                    </button>
-
-                </section>
 
                 <section className="grid">
                     {[0, 1, 2, 3, 4].map((slotIndex) => {
