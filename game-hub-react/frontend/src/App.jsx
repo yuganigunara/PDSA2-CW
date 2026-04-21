@@ -1,7 +1,7 @@
 import React from "react";
 import { useEffect, useMemo, useState } from "react";
 
-const API_BASE = "http://127.0.0.1:8006/api";
+const API_BASE = "http://127.0.0.1:8002/api";
 
 function delay(ms) {
     return new Promise((resolve) => {
@@ -116,7 +116,7 @@ function App() {
         }
 
         if (name.includes("minimum cost")) {
-            return "http://localhost:5178/";
+            return "http://localhost:5187/";
         }
 
         if (name.includes("traffic") || command.includes("traffic simulation") || command.includes("run.py")) {

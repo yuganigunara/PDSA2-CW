@@ -423,6 +423,103 @@ button.ghost {
   color: var(--muted);
 }
 
+.benchmark-chart-wrap {
+  margin-bottom: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 10px;
+}
+
+.benchmark-chart {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.benchmark-grid-line {
+  stroke: rgba(255, 255, 255, 0.13);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+}
+
+.benchmark-axis {
+  stroke: rgba(255, 255, 255, 0.4);
+  stroke-width: 1.2;
+}
+
+.benchmark-axis-label {
+  fill: #bfd0f2;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.benchmark-axis-title {
+  fill: #d5e4ff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.benchmark-line {
+  fill: none;
+  stroke-width: 2.4;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.bfs-line {
+  stroke: var(--accent-bfs);
+}
+
+.dp-line {
+  stroke: var(--accent-dp);
+}
+
+.benchmark-point {
+  stroke: rgba(7, 17, 31, 0.9);
+  stroke-width: 1;
+}
+
+.bfs-point {
+  fill: var(--accent-bfs);
+}
+
+.dp-point {
+  fill: var(--accent-dp);
+}
+
+.benchmark-chart-legend {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #d7e5ff;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid rgba(7, 17, 31, 0.9);
+}
+
+.bfs-dot {
+  background: var(--accent-bfs);
+}
+
+.dp-dot {
+  background: var(--accent-dp);
+}
+
 .bars {
   display: grid;
   gap: 7px;
@@ -560,5 +657,10 @@ th {
 
   .bar-row {
     grid-template-columns: 1fr;
+  }
+
+  .benchmark-chart-legend {
+    justify-content: flex-start;
+    flex-wrap: wrap;
   }
 }
