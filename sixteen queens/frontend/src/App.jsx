@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
 const API_BASE = "http://127.0.0.1:8003/api/sixteen-queens";
+const GAME_HUB_URL = "http://localhost:5175/";
 const KNOWN_ANSWER = 14772512;
 const FALLBACK_BOARD = [
   "Q...............",
@@ -275,6 +276,10 @@ export default function App() {
     [rounds]
   );
 
+  function goToGameHub() {
+    window.location.href = GAME_HUB_URL;
+  }
+
   const sampleBoard = state?.sample_board?.length ? state.sample_board : FALLBACK_BOARD;
   const recentAnswers = state?.dashboard?.answers || [];
   const dbRounds = state?.dashboard?.rounds || [];
@@ -304,6 +309,7 @@ export default function App() {
         <div className="hero-actions">
           <button onClick={() => runBenchmark(1)} disabled={running}>Run 1 Round</button>
           <button onClick={() => runBenchmark(20)} disabled={running}>Run 20 Tests</button>
+          <button className="outline" onClick={goToGameHub}>Back to Game hub</button>
         </div>
       </header>
 

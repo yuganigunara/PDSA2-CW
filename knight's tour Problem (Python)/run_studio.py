@@ -35,15 +35,15 @@ def launch_hidden(command: list[str], cwd: Path) -> None:
 
 def main() -> None:
     py_exe = sys.executable
+    npm_command = ["npm", "run", "dev", "--", "--host", "localhost", "--port", str(KNIGHT_FRONTEND_PORT), "--strictPort"]
+    if sys.platform.startswith("win"):
+        npm_command = ["cmd", "/c", " ".join(npm_command)]
 
     if not is_port_open("127.0.0.1", 5001):
         launch_hidden([py_exe, "run_api.py"], ROOT)
 
     if not is_port_open("127.0.0.1", KNIGHT_FRONTEND_PORT):
-        launch_hidden(
-            ["cmd", "/c", f"npm run dev -- --host localhost --port {KNIGHT_FRONTEND_PORT} --strictPort"],
-            FRONTEND,
-        )
+        launch_hidden(npm_command, FRONTEND)
 
     # Browser navigation is handled by Game Hub UI.
 

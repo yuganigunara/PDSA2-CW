@@ -14,7 +14,7 @@ function Logs() {
 
     const fetchLogs = async () => {
         try {
-            const response = await fetch("http://127.0.0.1:8002/api/logs");
+            const response = await fetch("http://127.0.0.1:8006/api/logs");
             const data = await response.json();
             setLogs(data);
             setError("");
