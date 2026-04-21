@@ -600,13 +600,18 @@ th {
 .footer-actions {
   display: grid;
   gap: 10px;
-  grid-template-columns: auto auto 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: center;
+}
+
+.footer-actions button {
+  width: 100%;
 }
 
 .status {
   margin: 0;
   color: #c4d2ef;
+  grid-column: 1 / -1;
 }
 
 .popup-backdrop {

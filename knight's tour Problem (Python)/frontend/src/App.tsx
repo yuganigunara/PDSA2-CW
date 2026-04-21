@@ -480,11 +480,6 @@ function App() {
     }
 
     function backToGameHubDashboard() {
-        if (window.history.length > 1) {
-            window.history.back();
-            return;
-        }
-
         window.location.assign('http://localhost:5180/');
     }
 

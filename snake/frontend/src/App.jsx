@@ -3,6 +3,7 @@ import snakeImage from "./assets/snake-illustration.svg";
 
 const MIN_BOARD_SIZE = 6;
 const MAX_BOARD_SIZE = 12;
+const GAME_HUB_URL = "http://localhost:5180/";
 
 function nsToMs(ns) {
   return Number((ns / 1_000_000).toFixed(3));
@@ -713,6 +714,10 @@ function App() {
     setResultMessage("Session ended. You can start again any time.");
   };
 
+  const backToGameHub = () => {
+    window.location.assign(GAME_HUB_URL);
+  };
+
   if (view === "database") {
     return (
       <DatabasePage
@@ -879,7 +884,8 @@ function App() {
 
       <footer className="card footer-actions">
         <button onClick={runBenchmark} disabled={loading}>Run 20 Round Benchmark</button>
-        <button className="ghost" onClick={exitSession} disabled={loading}>Exit</button>
+        <button className="ghost" onClick={exitSession} disabled={loading}>Restart Game</button>
+        <button className="ghost" onClick={backToGameHub} disabled={loading}>Back to Game Hub</button>
         <p className="status" aria-live="polite">{loading ? "Working..." : resultMessage}</p>
       </footer>
 

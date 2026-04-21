@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import "./App.css";
 
 const API = "http://localhost:8000";
-const GAME_HUB_URL = "http://localhost:5173/";
+const GAME_HUB_URL = "http://localhost:5180/";
 
 // PLAY ROUND 
 function PlayRound({ playerName }) {
@@ -630,31 +630,7 @@ export default function App() {
   };
 
   const goBackToHub = () => {
-    const candidates = [
-      GAME_HUB_URL,
-      "http://localhost:5177/",
-      "http://localhost:5176/",
-    ];
-
-    const fromReferrer = document.referrer && document.referrer.includes("localhost:517")
-      ? document.referrer
-      : null;
-    const ordered = fromReferrer ? [fromReferrer, ...candidates.filter((u) => u !== fromReferrer)] : candidates;
-
-    const probeAndGo = async () => {
-      for (const url of ordered) {
-        try {
-          await fetch(url, { method: "GET", mode: "no-cors", cache: "no-store" });
-          window.location.assign(url);
-          return;
-        } catch {
-          // try next candidate
-        }
-      }
-      window.location.assign(ordered[0]);
-    };
-
-    void probeAndGo();
+    window.location.assign(GAME_HUB_URL);
   };
 
   if (screen === "entry") {
