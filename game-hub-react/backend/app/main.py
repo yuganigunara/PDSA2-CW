@@ -40,15 +40,24 @@ DEFAULT_GAMES = [
     {
         "name": "Sixteen Queens (Branch)",
         "cwd": "sixteen queens",
-        "command": ["{python}", "run_studio.py"],
+        "command": ["cmd", "/c", "run_sixteen_queens.bat"],
         "enabled": True,
         "needs_src_path": False,
     },
    
     {
         "name": "Minimum Cost Studio",
-        "cwd": "minimum,_cost_problem",
-        "command": ["{python}", "run_studio.py"],
+        "cwd": "minimum,_cost_problem/server",
+        "command": [
+            "{python}",
+            "-m",
+            "uvicorn",
+            "app:app",
+            "--host",
+            "127.0.0.1",
+            "--port",
+            "8006",
+        ],
         "enabled": True,
         "needs_src_path": False,
     }
@@ -257,7 +266,7 @@ def launch_game(index: int) -> dict[str, Any]:
     elif (
         "minimum cost" in game_name and "studio" in game_name
     ):
-        web_url = "http://localhost:5178/"
+        web_url = "http://localhost:5187/"
     elif cwd_rel.lower() == "traffic simulation problem" or (
         "run.py" in command_text and "traffic" in game_name
     ):
