@@ -1002,21 +1002,23 @@ button {
 
 .cell-label {
     position: absolute;
-    top: 0.45rem;
-    left: 0.5rem;
-    z-index: 1;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 1.55rem;
-    min-height: 1.2rem;
-    padding: 0.06rem 0.35rem;
+    top: 2px;
+    left: 3px;
+
+    font-size: clamp(0.45rem, 0.7vw, 0.7rem);
+    padding: 0.05rem 0.25rem;
+
     border-radius: 999px;
-    font-size: clamp(0.62rem, 1.05vw, 0.95rem);
-    font-weight: 800;
-    letter-spacing: 0.02em;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.28);
-    backdrop-filter: blur(8px);
+    font-weight: 700;
+
+    white-space: nowrap;
+    min-width: auto;   /* IMPORTANT */
+    max-width: 90%;    /* prevent overflow */
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    z-index: 2;
 }
 
 .cell-light .cell-label {
@@ -1135,9 +1137,13 @@ button {
     margin-right: 18px;
     margin-bottom: 16px;
     padding: 10px 12px;
-    border-radius: 14px;
+
+    border-radius: 10px;
     border: 1px solid rgba(255, 255, 255, 0.06);
     background: rgba(255, 255, 255, 0.03);
+
+    font-size: 0.55rem;
+    line-height: 1.5;    
 }
 
 .status-card {
