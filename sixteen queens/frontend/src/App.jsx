@@ -23,6 +23,143 @@ const FALLBACK_BOARD = [
 
 const formatMs = (timeNs) => `${(Number(timeNs || 0) / 1e6).toFixed(2)} ms`;
 const formatKb = (bytes) => `${(Number(bytes || 0) / 1024).toFixed(1)} KB`;
+const graphWidth = 980;
+const graphHeight = 340;
+const graphMargin = { top: 24, right: 24, bottom: 56, left: 76 };
+
+function buildSeries(rounds, algorithm, field) {
+  return rounds
+    .map((round, index) => ({
+      index: index + 1,
+      round_no: round.round_no,
+      value: Number(round?.[algorithm]?.[field] || 0),
+    }))
+    .filter((point) => point.value > 0);
+}
+
+function GraphCard({
+  title,
+  chip,
+  legendLeft,
+  legendRight,
+  yLabel,
+  series,
+  valueFormatter,
+  valueScale = 1,
+  fixedYDomainMin,
+  fixedYDomainMax,
+  fixedYTickStep,
+  fixedYTickCount,
+  domainPadding = 0,
+  xLabelEvery = 1,
+  hoverPointLabels = false,
+}) {
+  const flatValues = series.flatMap((item) => item.points.map((point) => point.value));
+  const maxValue = Math.max(1, ...flatValues);
+  const minValue = Math.min(...flatValues, maxValue);
+  const yDomainMin = typeof fixedYDomainMin === "number" ? fixedYDomainMin : Math.max(0, minValue - domainPadding);
+  const yDomainMax = typeof fixedYDomainMax === "number" ? fixedYDomainMax : maxValue + domainPadding;
+  const innerWidth = graphWidth - graphMargin.left - graphMargin.right;
+  const innerHeight = graphHeight - graphMargin.top - graphMargin.bottom;
+  const xCount = Math.max(1, series[0]?.points.length || 0);
+  const yDomainSpan = Math.max(1, yDomainMax - yDomainMin);
+
+  const chartSeries = series.map((item, seriesIndex) => {
+    const points = item.points.map((point) => {
+      const x = graphMargin.left + (xCount === 1 ? innerWidth / 2 : ((point.index - 1) / (xCount - 1)) * innerWidth);
+      const y = graphMargin.top + innerHeight - ((point.value - yDomainMin) / yDomainSpan) * innerHeight;
+      return { ...point, x, y };
+    });
+    return { ...item, points, colorIndex: seriesIndex };
+  });
+
+  const yTickValues = fixedYTickStep
+    ? Array.from({ length: Math.floor((yDomainMax - yDomainMin) / fixedYTickStep) + 1 }, (_, index) => yDomainMin + index * fixedYTickStep)
+    : Array.from({ length: (fixedYTickCount || 5) + 1 }, (_, index) => yDomainMin + (yDomainSpan / (fixedYTickCount || 5)) * index);
+  const xTickValues = Array.from({ length: xCount }, (_, index) => index + 1).filter(
+    (roundNo) => roundNo === 1 || roundNo === xCount || (roundNo - 1) % xLabelEvery === 0
+  );
+
+  return (
+    <section className="panel chart-panel">
+      <div className="panel-head">
+        <h2>{title}</h2>
+        <span className="chip">{chip}</span>
+      </div>
+
+      {!series.some((item) => item.points.length) && (
+        <div className="banner banner-ok">No benchmark data yet. Run 20 tests to populate this graph.</div>
+      )}
+
+      <div className="graph-layout">
+        <div className="graph-wrap">
+          <svg viewBox={`0 0 ${graphWidth} ${graphHeight}`} role="img" aria-label={title} className="line-graph">
+            {yTickValues.map((value) => {
+              const y = graphMargin.top + innerHeight - ((value - yDomainMin) / yDomainSpan) * innerHeight;
+              return (
+                <g key={`tick-${value}`}>
+                  <line x1={graphMargin.left} y1={y} x2={graphWidth - graphMargin.right} y2={y} className="graph-grid" />
+                  <line x1={graphMargin.left - 6} y1={y} x2={graphMargin.left} y2={y} className="graph-axis" />
+                  <text x={graphMargin.left - 10} y={y + 4} className="graph-y-label" textAnchor="end">
+                    {valueFormatter(value / valueScale)}
+                  </text>
+                </g>
+              );
+            })}
+
+            <line x1={graphMargin.left} y1={graphMargin.top + innerHeight} x2={graphWidth - graphMargin.right} y2={graphMargin.top + innerHeight} className="graph-axis" />
+            <line x1={graphMargin.left} y1={graphMargin.top} x2={graphMargin.left} y2={graphMargin.top + innerHeight} className="graph-axis" />
+
+            {chartSeries.map((item) => {
+              const linePoints = item.points.map((point) => `${point.x},${point.y}`).join(" ");
+              return (
+                <g key={item.label} className={`graph-series series-${item.colorIndex}`}>
+                  <polyline points={linePoints} className="graph-line" />
+                  {item.points.map((point) => (
+                    <g key={`${item.label}-${point.round_no}`} className="graph-point-group">
+                      <circle cx={point.x} cy={point.y} r="5" className="graph-dot" />
+                      {hoverPointLabels && (
+                        <text
+                          x={point.x + (item.colorIndex === 0 ? -6 : 6)}
+                          y={point.y - 8}
+                          className={`graph-point-label ${item.colorIndex === 0 ? "point-left" : "point-right"}`}
+                          textAnchor={item.colorIndex === 0 ? "end" : "start"}
+                        >
+                          {valueFormatter(point.value / valueScale)}
+                        </text>
+                      )}
+                    </g>
+                  ))}
+                </g>
+              );
+            })}
+
+            {xTickValues.map((roundNo) => {
+              const x = graphMargin.left + (xCount === 1 ? innerWidth / 2 : ((roundNo - 1) / (xCount - 1)) * innerWidth);
+              return (
+                <text key={`round-${roundNo}`} x={x} y={graphMargin.top + innerHeight + 18} className="graph-round" textAnchor="middle">
+                  {roundNo}
+                </text>
+              );
+            })}
+
+            <text x={graphMargin.left + innerWidth / 2} y={graphHeight - 8} className="graph-x-title" textAnchor="middle">
+              Game Round (1-20)
+            </text>
+            <text x={18} y={graphMargin.top + innerHeight / 2} className="graph-y-title" textAnchor="middle" transform={`rotate(-90 18 ${graphMargin.top + innerHeight / 2})`}>
+              {yLabel}
+            </text>
+          </svg>
+        </div>
+
+        <aside className="graph-legend-box">
+          <div className="legend-item"><span className="legend-dot series-0" />{legendLeft}</div>
+          <div className="legend-item"><span className="legend-dot series-1" />{legendRight}</div>
+        </aside>
+      </div>
+    </section>
+  );
+}
 
 export default function App() {
   const [state, setState] = useState(null);
@@ -53,37 +190,6 @@ export default function App() {
       setLoading(false);
     }
   }
-
-  useEffect(() => {
-    loadState();
-  }, []);
-
-  useEffect(() => {
-    if (loading || seededRef.current) {
-      return;
-    }
-
-    const hasRounds = Boolean(state?.dashboard?.rounds?.length);
-    if (!hasRounds) {
-      seededRef.current = true;
-      runBenchmark(1);
-    }
-  }, [loading, state]);
-
-  const rounds = useMemo(() => {
-    const map = new Map();
-    for (const row of state?.dashboard?.rounds || []) {
-      const item = map.get(row.round_no) || { round_no: row.round_no };
-      item[row.algorithm] = row;
-      map.set(row.round_no, item);
-    }
-    return [...map.values()].slice(-10);
-  }, [state]);
-
-  const maxTime = useMemo(() => {
-    const values = rounds.flatMap((row) => [row.sequential?.time_ns || 0, row.threaded?.time_ns || 0]);
-    return Math.max(1, ...values);
-  }, [rounds]);
 
   async function runBenchmark(count) {
     setRunning(true);
@@ -126,6 +232,48 @@ export default function App() {
       setError(submitError.message);
     }
   }
+
+  useEffect(() => {
+    loadState();
+  }, []);
+
+  useEffect(() => {
+    if (loading || seededRef.current) {
+      return;
+    }
+
+    const hasRounds = Boolean(state?.dashboard?.rounds?.length);
+    if (!hasRounds) {
+      seededRef.current = true;
+      runBenchmark(1);
+    }
+  }, [loading, state]);
+
+  const rounds = useMemo(() => {
+    const map = new Map();
+    for (const row of state?.dashboard?.rounds || []) {
+      const item = map.get(row.round_no) || { round_no: row.round_no };
+      item[row.algorithm] = row;
+      map.set(row.round_no, item);
+    }
+    return [...map.values()].slice(-20);
+  }, [state]);
+
+  const timeSeries = useMemo(
+    () => [
+      { label: "Sequential", points: buildSeries(rounds, "sequential", "time_ns") },
+      { label: "Threaded", points: buildSeries(rounds, "threaded", "time_ns") },
+    ],
+    [rounds]
+  );
+
+  const spaceSeries = useMemo(
+    () => [
+      { label: "Sequential", points: buildSeries(rounds, "sequential", "peak_bytes") },
+      { label: "Threaded", points: buildSeries(rounds, "threaded", "peak_bytes") },
+    ],
+    [rounds]
+  );
 
   const sampleBoard = state?.sample_board?.length ? state.sample_board : FALLBACK_BOARD;
   const recentAnswers = state?.dashboard?.answers || [];
@@ -204,38 +352,34 @@ export default function App() {
         </article>
       </section>
 
-      <section className="panel chart-panel">
-        <div className="panel-head">
-          <h2>Benchmark Chart</h2>
-          <span className="chip">Top 10 rounds from sqlite</span>
-        </div>
-        {!rounds.length && !loading && (
-          <div className="banner banner-ok">No benchmark data yet. Loading a sample round to seed the sqlite chart.</div>
-        )}
-        <div className="chart-list">
-          {rounds.map((round) => (
-            <div className="chart-row" key={round.round_no}>
-              <span className="round-tag">Round {round.round_no}</span>
-              <div className="bar-group">
-                {round.sequential && (
-                  <div className="bar-line">
-                    <small>Sequential</small>
-                    <div className="bar-track"><span style={{ width: `${(round.sequential.time_ns / maxTime) * 100}%` }} /></div>
-                    <span>{formatMs(round.sequential.time_ns)} | {formatKb(round.sequential.peak_bytes)}</span>
-                  </div>
-                )}
-                {round.threaded && (
-                  <div className="bar-line">
-                    <small>Threaded</small>
-                    <div className="bar-track threaded"><span style={{ width: `${(round.threaded.time_ns / maxTime) * 100}%` }} /></div>
-                    <span>{formatMs(round.threaded.time_ns)} | {formatKb(round.threaded.peak_bytes)}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+      <GraphCard
+        title="Time Taken Chart"
+        chip="Last 20 rounds from sqlite"
+        legendLeft="Sequential"
+        legendRight="Threaded"
+        yLabel="time in milliseconds"
+        series={timeSeries}
+        valueFormatter={formatMs}
+        valueScale={1}
+        domainPadding={10 * 1e6}
+        fixedYTickCount={9}
+        xLabelEvery={1}
+        hoverPointLabels={true}
+      />
+
+      <GraphCard
+        title="Space Taken Chart"
+        chip="Peak memory for last 20 rounds"
+        legendLeft="Sequential"
+        legendRight="Threaded"
+        yLabel="peak memory in KB"
+        series={spaceSeries}
+        valueFormatter={formatKb}
+        valueScale={1}
+        domainPadding={0.2 * 1024}
+        fixedYTickCount={9}
+        hoverPointLabels={true}
+      />
 
       <section className="panel db-panel">
         <div className="panel-head">
