@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import "./App.css";
 
-const API = "http://localhost:8000";
+const API = "http://localhost:8006";
 const GAME_HUB_URL = "http://localhost:5180/";
 
 // PLAY ROUND 
