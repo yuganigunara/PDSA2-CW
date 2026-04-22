@@ -199,7 +199,7 @@ function toggleRecentResults() {
 }
 
 function backToHub() {
-  window.location.assign("http://localhost:5175/");
+  window.location.assign("http://localhost:5180/");
 }
 
 function clearRoundView() {

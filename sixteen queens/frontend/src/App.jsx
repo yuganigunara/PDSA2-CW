@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
 const API_BASE = "http://127.0.0.1:8003/api/sixteen-queens";
-const GAME_HUB_URL = "http://localhost:5175/";
+const GAME_HUB_URL = "http://localhost:5180/";
 const KNOWN_ANSWER = 14772512;
 const FALLBACK_BOARD = [
   "Q...............",

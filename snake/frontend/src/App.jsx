@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import snakeImage from "./assets/snake-illustration.svg";
 
+const MIN_BOARD_SIZE = 6;
+const MAX_BOARD_SIZE = 12;
+const GAME_HUB_URL = "http://localhost:5180/";
+
 function nsToMs(ns) {
   return Number((ns / 1_000_000).toFixed(3));
 }
@@ -183,6 +187,111 @@ function BoardGrid({ board }) {
   );
 }
 
+function BenchmarkComparisonChart({ samples }) {
+  if (!samples?.length) {
+    return null;
+  }
+
+  const width = 860;
+  const height = 300;
+  const padding = { top: 20, right: 28, bottom: 40, left: 56 };
+  const chartWidth = width - padding.left - padding.right;
+  const chartHeight = height - padding.top - padding.bottom;
+  const maxMs = Math.max(...samples.map((sample) => Math.max(sample.bfs_ms, sample.dp_ms)), 1);
+  const tickCount = 5;
+  const tickStep = maxMs / tickCount;
+  const xLabelStep = Math.max(1, Math.ceil(samples.length / 8));
+
+  const xForIndex = (index) => {
+    if (samples.length === 1) {
+      return padding.left + chartWidth / 2;
+    }
+    return padding.left + (index / (samples.length - 1)) * chartWidth;
+  };
+
+  const yForValue = (value) => padding.top + chartHeight - (value / maxMs) * chartHeight;
+
+  const buildPath = (selector) =>
+    samples
+      .map((sample, index) => {
+        const x = xForIndex(index);
+        const y = yForValue(sample[selector]);
+        return `${index === 0 ? "M" : "L"} ${x.toFixed(2)} ${y.toFixed(2)}`;
+      })
+      .join(" ");
+
+  const bfsPath = buildPath("bfs_ms");
+  const dpPath = buildPath("dp_ms");
+
+  return (
+    <div className="benchmark-chart-wrap" aria-label="Benchmark line chart for BFS and DP in milliseconds">
+      <svg viewBox={`0 0 ${width} ${height}`} className="benchmark-chart" role="img" aria-label="BFS and DP time comparison chart">
+        {Array.from({ length: tickCount + 1 }, (_, i) => {
+          const value = tickStep * i;
+          const y = yForValue(value);
+          return (
+            <g key={`tick-${i}`}>
+              <line
+                className="benchmark-grid-line"
+                x1={padding.left}
+                y1={y}
+                x2={padding.left + chartWidth}
+                y2={y}
+              />
+              <text x={padding.left - 8} y={y + 4} className="benchmark-axis-label" textAnchor="end">
+                {value.toFixed(3)}
+              </text>
+            </g>
+          );
+        })}
+
+        <line className="benchmark-axis" x1={padding.left} y1={padding.top} x2={padding.left} y2={padding.top + chartHeight} />
+        <line
+          className="benchmark-axis"
+          x1={padding.left}
+          y1={padding.top + chartHeight}
+          x2={padding.left + chartWidth}
+          y2={padding.top + chartHeight}
+        />
+
+        <path d={bfsPath} className="benchmark-line bfs-line" />
+        <path d={dpPath} className="benchmark-line dp-line" />
+
+        {samples.map((sample, index) => {
+          const x = xForIndex(index);
+          const bfsY = yForValue(sample.bfs_ms);
+          const dpY = yForValue(sample.dp_ms);
+          const showLabel = index % xLabelStep === 0 || index === samples.length - 1;
+          return (
+            <g key={`point-${sample.round_number}-${index}`}>
+              <circle cx={x} cy={bfsY} r="3.4" className="benchmark-point bfs-point" />
+              <circle cx={x} cy={dpY} r="3.4" className="benchmark-point dp-point" />
+
+              {showLabel ? (
+                <text
+                  x={x}
+                  y={padding.top + chartHeight + 18}
+                  className="benchmark-axis-label"
+                  textAnchor="middle"
+                >
+                  R{sample.round_number}
+                </text>
+              ) : null}
+            </g>
+          );
+        })}
+
+        <text className="benchmark-axis-title" x={padding.left - 40} y={padding.top - 6}>ms</text>
+      </svg>
+
+      <div className="benchmark-chart-legend" aria-hidden="true">
+        <span className="legend-item"><i className="legend-dot bfs-dot" /> BFS</span>
+        <span className="legend-item"><i className="legend-dot dp-dot" /> DP</span>
+      </div>
+    </div>
+  );
+}
+
 function DatabaseTables({ dbSnapshot, dbRequested }) {
   return (
     <section className="card db-panel">
@@ -325,7 +434,7 @@ function DatabasePage({ dbSnapshot, dbRequested, dbMessage, loading, onReload, o
 
 function App() {
   const [playerName, setPlayerName] = useState("");
-  const [boardSize, setBoardSize] = useState(8);
+  const [boardSize, setBoardSize] = useState("8");
   const [round, setRound] = useState(null);
   const [selected, setSelected] = useState(null);
   const [resultMessage, setResultMessage] = useState("Welcome. Start a round to play.");
@@ -368,7 +477,45 @@ function App() {
     return { bfs, dp, maxMs };
   }, [benchmark]);
 
+  const getValidatedBoardSize = () => {
+    const parsedSize = Number.parseInt(boardSize, 10);
+    if (!Number.isInteger(parsedSize) || parsedSize < MIN_BOARD_SIZE || parsedSize > MAX_BOARD_SIZE) {
+      const message = `Board size must be between ${MIN_BOARD_SIZE} and ${MAX_BOARD_SIZE}.`;
+      setResultMessage(message);
+      setAnswerPopup({
+        tone: "error",
+        title: "Invalid Board Size",
+        message,
+      });
+      return null;
+    }
+    return parsedSize;
+  };
+
+  const handleBoardSizeChange = (event) => {
+    const digitsOnly = event.target.value.replace(/\D/g, "");
+    const normalized = digitsOnly.replace(/^0+(?=\d)/, "");
+    setBoardSize(normalized);
+  };
+
   const startRound = async () => {
+    const normalizedName = playerName.trim();
+    if (!normalizedName) {
+      const message = "Player name is required.";
+      setResultMessage(message);
+      setAnswerPopup({
+        tone: "error",
+        title: "Missing Player Name",
+        message,
+      });
+      return;
+    }
+
+    const validatedBoardSize = getValidatedBoardSize();
+    if (validatedBoardSize === null) {
+      return;
+    }
+
     setLoading(true);
     setSelected(null);
     setResultMessage("");
@@ -378,8 +525,8 @@ function App() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          player_name: playerName,
-          board_size: Number(boardSize),
+          player_name: normalizedName,
+          board_size: validatedBoardSize,
         }),
       });
 
@@ -470,12 +617,17 @@ function App() {
   };
 
   const runBenchmark = async () => {
+    const validatedBoardSize = getValidatedBoardSize();
+    if (validatedBoardSize === null) {
+      return;
+    }
+
     setLoading(true);
     setBenchmarkRequested(true);
     setResultMessage("");
 
     try {
-      const response = await fetch(`/api/benchmark?rounds=20&board_size=${Number(boardSize)}`);
+      const response = await fetch(`/api/benchmark?rounds=20&board_size=${validatedBoardSize}`);
       const payload = await parseResponsePayload(response);
 
       if (!response.ok) {
@@ -562,6 +714,10 @@ function App() {
     setResultMessage("Session ended. You can start again any time.");
   };
 
+  const backToGameHub = () => {
+    window.location.assign(GAME_HUB_URL);
+  };
+
   if (view === "database") {
     return (
       <DatabasePage
@@ -604,11 +760,12 @@ function App() {
         <label htmlFor="boardSize">Board size (6 to 12)</label>
         <input
           id="boardSize"
-          type="number"
-          min={6}
-          max={12}
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
           value={boardSize}
-          onChange={(e) => setBoardSize(Number(e.target.value))}
+          onChange={handleBoardSizeChange}
+          placeholder="8"
         />
 
         <div className="actions">
@@ -693,6 +850,9 @@ function App() {
               <p>Average BFS: {avg.bfs.toFixed(3)} ms</p>
               <p>Average DP: {avg.dp.toFixed(3)} ms</p>
             </div>
+
+            <BenchmarkComparisonChart samples={benchmark.samples} />
+
             <div className="bars">
               {benchmark.samples.map((sample) => (
                 <div key={sample.round_number} className="bar-row">
@@ -724,7 +884,8 @@ function App() {
 
       <footer className="card footer-actions">
         <button onClick={runBenchmark} disabled={loading}>Run 20 Round Benchmark</button>
-        <button className="ghost" onClick={exitSession} disabled={loading}>Exit</button>
+        <button className="ghost" onClick={exitSession} disabled={loading}>Restart Game</button>
+        <button className="ghost" onClick={backToGameHub} disabled={loading}>Back to Game Hub</button>
         <p className="status" aria-live="polite">{loading ? "Working..." : resultMessage}</p>
       </footer>
 

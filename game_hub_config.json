@@ -33,18 +33,25 @@
         "name": "Sixteen Queens (Branch)",
         "cwd": "sixteen queens",
         "command": [
-            "{python}",
-            "run_studio.py"
+            "cmd",
+            "/c",
+            "run_sixteen_queens.bat"
         ],
         "enabled": true,
         "needs_src_path": false
     },
     {
         "name": "Minimum Cost Studio",
-        "cwd": "minimum,_cost_problem",
+        "cwd": "minimum,_cost_problem/server",
         "command": [
             "{python}",
-            "run_studio.py"
+            "-m",
+            "uvicorn",
+            "app:app",
+            "--host",
+            "127.0.0.1",
+            "--port",
+            "8006"
         ],
         "enabled": true,
         "needs_src_path": false
