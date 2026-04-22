@@ -229,28 +229,6 @@ function App() {
                 {notice && <p className="message ok">{notice}</p>}
 
 
-
-                <section className="quick-row">
-                    <button className="tab-btn" onClick={launchLastPlayed}>
-                        Play Last Game
-                    </button>
-                    <button
-                        className="tab-btn"
-                        onClick={() => {
-                            setQuery("");
-                        }}
-                    >
-                        Clear Filters
-                    </button>
-                    <button
-                        className="tab-btn logs-btn"
-                        onClick={() => window.open("/logs.html", "_blank")}
-                    >
-                        📊 View Logs
-                    </button>
-
-                </section>
-
                 <section className="grid">
                     {[0, 1, 2, 3, 4].map((slotIndex) => {
                         const descriptions = [
