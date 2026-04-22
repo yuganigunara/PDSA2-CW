@@ -2,8 +2,31 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 
 const API_BASE = "http://127.0.0.1:8003/api/sixteen-queens";
 const GAME_HUB_URL = "http://localhost:5180/";
-const KNOWN_ANSWER = 14772512;
-const FALLBACK_BOARD = [
+const SUPPORTED_SIZES = [8, 16];
+const KNOWN_ANSWER_BY_SIZE = {
+  8: 92,
+  16: 14772512,
+};
+const FALLBACK_BOARD_BY_SIZE = {
+  8: [
+    "Q...............",
+    "....Q...........",
+    ".......Q........",
+    ".Q..............",
+    "........Q.......",
+    "...Q............",
+    ".....Q..........",
+    "..Q.............",
+    "................",
+    "................",
+    "................",
+    "................",
+    "................",
+    "................",
+    "................",
+    "................",
+  ],
+  16: [
   "Q...............",
   "..Q.............",
   "....Q...........",
@@ -20,7 +43,8 @@ const FALLBACK_BOARD = [
   "..........Q.....",
   ".......Q........",
   ".........Q......",
-];
+  ],
+};
 
 const formatMs = (timeNs) => `${(Number(timeNs || 0) / 1e6).toFixed(2)} ms`;
 const formatKb = (bytes) => `${(Number(bytes || 0) / 1024).toFixed(1)} KB`;
@@ -36,6 +60,14 @@ function buildSeries(rounds, algorithm, field) {
       value: Number(round?.[algorithm]?.[field] || 0),
     }))
     .filter((point) => point.value > 0);
+}
+
+function getKnownAnswer(queenCount) {
+  return KNOWN_ANSWER_BY_SIZE[queenCount] || KNOWN_ANSWER_BY_SIZE[16];
+}
+
+function getFallbackBoard(queenCount) {
+  return FALLBACK_BOARD_BY_SIZE[queenCount] || FALLBACK_BOARD_BY_SIZE[16];
 }
 
 function GraphCard({
@@ -168,19 +200,20 @@ export default function App() {
   const [running, setRunning] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [selectedSize, setSelectedSize] = useState(16);
   const [playerName, setPlayerName] = useState("");
-  const [answer, setAnswer] = useState(String(KNOWN_ANSWER));
+  const [answer, setAnswer] = useState(String(getKnownAnswer(16)));
   const [roundsScroll, setRoundsScroll] = useState(0);
   const [answersScroll, setAnswersScroll] = useState(0);
-  const seededRef = useRef(false);
+  const seededRef = useRef({});
   const roundsTableRef = useRef(null);
   const answersTableRef = useRef(null);
 
-  async function loadState() {
+  async function loadState(queenCount = selectedSize) {
     setLoading(true);
     setError("");
     try {
-      const response = await fetch(API_BASE);
+      const response = await fetch(`${API_BASE}?queen_count=${queenCount}`);
       if (!response.ok) {
         throw new Error("Could not load Sixteen Queens data.");
       }
@@ -192,18 +225,18 @@ export default function App() {
     }
   }
 
-  async function runBenchmark(count) {
+  async function runBenchmark(count, queenCount = selectedSize) {
     setRunning(true);
     setError("");
     setMessage("");
     try {
-      const response = await fetch(`${API_BASE}/benchmark?count=${count}`, { method: "POST" });
+      const response = await fetch(`${API_BASE}/benchmark?count=${count}&queen_count=${queenCount}`, { method: "POST" });
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.detail || "Benchmark failed.");
       }
       setMessage(data.message);
-      await loadState();
+      await loadState(queenCount);
     } catch (benchError) {
       setError(benchError.message);
     } finally {
@@ -219,7 +252,7 @@ export default function App() {
       const response = await fetch(`${API_BASE}/answer`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ player_name: playerName, answer: Number(answer) }),
+        body: JSON.stringify({ player_name: playerName, answer: Number(answer), queen_count: selectedSize }),
       });
       const data = await response.json();
       if (!response.ok) {
@@ -227,28 +260,29 @@ export default function App() {
       }
       setMessage(data.message);
       setPlayerName("");
-      setAnswer(String(KNOWN_ANSWER));
-      await loadState();
+      setAnswer(String(getKnownAnswer(selectedSize)));
+      await loadState(selectedSize);
     } catch (submitError) {
       setError(submitError.message);
     }
   }
 
   useEffect(() => {
-    loadState();
-  }, []);
+    setAnswer(String(getKnownAnswer(selectedSize)));
+    loadState(selectedSize);
+  }, [selectedSize]);
 
   useEffect(() => {
-    if (loading || seededRef.current) {
+    if (loading || seededRef.current[selectedSize]) {
       return;
     }
 
     const hasRounds = Boolean(state?.dashboard?.rounds?.length);
     if (!hasRounds) {
-      seededRef.current = true;
-      runBenchmark(1);
+      seededRef.current = { ...seededRef.current, [selectedSize]: true };
+      runBenchmark(1, selectedSize);
     }
-  }, [loading, state]);
+  }, [loading, state, selectedSize]);
 
   const rounds = useMemo(() => {
     const map = new Map();
@@ -280,7 +314,7 @@ export default function App() {
     window.location.href = GAME_HUB_URL;
   }
 
-  const sampleBoard = state?.sample_board?.length ? state.sample_board : FALLBACK_BOARD;
+  const sampleBoard = state?.sample_board?.length ? state.sample_board : getFallbackBoard(selectedSize);
   const recentAnswers = state?.dashboard?.answers || [];
   const dbRounds = state?.dashboard?.rounds || [];
 
@@ -304,11 +338,13 @@ export default function App() {
         <div>
           <p className="eyebrow">Sixteen Queens Puzzle</p>
           <h1>Sequential vs Threaded Benchmark Arena</h1>
-          <p className="subcopy">A 16x16 board, backtracking benchmark, and sqlite-backed chart for your report.</p>
+          <p className="subcopy">Switch between 8 queens and 16 queens on the same 16x16 game surface.</p>
         </div>
         <div className="hero-actions">
-          <button onClick={() => runBenchmark(1)} disabled={running}>Run 1 Round</button>
-          <button onClick={() => runBenchmark(20)} disabled={running}>Run 20 Tests</button>
+          <button className={selectedSize === 8 ? "outline active" : "outline"} onClick={() => setSelectedSize(8)} disabled={running}>8 Queens</button>
+          <button className={selectedSize === 16 ? "outline active" : "outline"} onClick={() => setSelectedSize(16)} disabled={running}>16 Queens</button>
+          <button onClick={() => runBenchmark(1, selectedSize)} disabled={running}>Run 1 Round</button>
+          <button onClick={() => runBenchmark(20, selectedSize)} disabled={running}>Run 20 Tests</button>
           <button className="outline" onClick={goToGameHub}>Back to Game hub</button>
         </div>
       </header>
@@ -321,9 +357,9 @@ export default function App() {
         <article className="panel board-panel">
           <div className="panel-head">
             <h2>Sample Board</h2>
-            <span className="chip">{state?.size || 16} x {state?.size || 16}</span>
+            <span className="chip">{state?.board_size || 16} x {state?.board_size || 16}</span>
           </div>
-          <div className="board">
+          <div className="board" style={{ gridTemplateColumns: `repeat(${state?.board_size || 16}, minmax(0, 1fr))` }}>
             {sampleBoard.map((row, rowIndex) =>
               row.split("").map((cell, colIndex) => (
                 <div key={`${rowIndex}-${colIndex}`} className={`cell ${(rowIndex + colIndex) % 2 === 0 ? "light" : "dark"} ${cell === "Q" ? "queen" : ""}`}>
@@ -337,7 +373,7 @@ export default function App() {
         <article className="panel control-panel">
           <div className="panel-head">
             <h2>Player Answer</h2>
-            <span className="chip accent">Known answer: {KNOWN_ANSWER.toLocaleString()}</span>
+            <span className="chip accent">Known answer: {getKnownAnswer(selectedSize).toLocaleString()}</span>
           </div>
 
           <form className="answer-form" onSubmit={submitAnswer}>
@@ -355,6 +391,7 @@ export default function App() {
             <div><strong>{formatMs(rounds.at(-1)?.sequential?.time_ns)}</strong><span>latest seq time</span></div>
             <div><strong>{formatMs(rounds.at(-1)?.threaded?.time_ns)}</strong><span>latest threaded time</span></div>
           </div>
+          <div className="mode-note">Mode: {selectedSize}-queen puzzle on a fixed 16x16 board</div>
         </article>
       </section>
 

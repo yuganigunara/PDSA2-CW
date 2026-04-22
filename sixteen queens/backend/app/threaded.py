@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from time import perf_counter_ns
 import tracemalloc
 
-from .backtracking import QUEENS_SIZE, KNOWN_SOLUTIONS
+from .backtracking import DEFAULT_QUEEN_COUNT, ensure_supported_queen_count, known_solutions_for_queen_count
 
 
 @dataclass(frozen=True)
@@ -17,23 +17,26 @@ class BenchmarkResult:
     peak_bytes: int
 
 
-def benchmark_threaded(size: int = QUEENS_SIZE) -> tuple[int, int, int]:
+def benchmark_threaded(queen_count: int = DEFAULT_QUEEN_COUNT) -> tuple[int, int, int]:
+    ensure_supported_queen_count(queen_count)
+    if queen_count == 16:
+        return benchmark_threaded_bounded(queen_count)
     tracemalloc.start()
     start = perf_counter_ns()
-    mask = (1 << size) - 1
+    mask = (1 << queen_count) - 1
 
     def branch(col_bit: int) -> int:
         return _count_from(col_bit, (col_bit << 1) & mask, col_bit >> 1, mask)
 
-    half = size // 2
+    half = queen_count // 2
     first_row = [1 << col for col in range(half)]
-    if size % 2:
+    if queen_count % 2:
         first_row.append(1 << half)
 
     with ThreadPoolExecutor(max_workers=len(first_row) or 1) as pool:
         subtotal = list(pool.map(branch, first_row))
 
-    solutions = sum(subtotal[:half]) * 2 + (subtotal[-1] if size % 2 else 0)
+    solutions = sum(subtotal[:half]) * 2 + (subtotal[-1] if queen_count % 2 else 0)
 
     time_ns = perf_counter_ns() - start
     _, peak = tracemalloc.get_traced_memory()
@@ -62,14 +65,14 @@ def _count_from_bounded(cols: int, pos_diag: int, neg_diag: int, mask: int, node
     return place(cols, pos_diag, neg_diag)
 
 
-def benchmark_threaded_bounded(timeout_seconds: int = 2) -> tuple[int, int, int]:
+def benchmark_threaded_bounded(queen_count: int = DEFAULT_QUEEN_COUNT, timeout_seconds: int = 2) -> tuple[int, int, int]:
     # timeout_seconds is kept for compatibility; bounded benchmark avoids hard timeouts.
     del timeout_seconds
-    size = QUEENS_SIZE
-    mask = (1 << size) - 1
-    half = size // 2
+    ensure_supported_queen_count(queen_count)
+    mask = (1 << queen_count) - 1
+    half = queen_count // 2
     first_row = [1 << col for col in range(half)]
-    if size % 2:
+    if queen_count % 2:
         first_row.append(1 << half)
 
     branch_count = len(first_row) or 1
@@ -93,7 +96,7 @@ def benchmark_threaded_bounded(timeout_seconds: int = 2) -> tuple[int, int, int]
 
     _, peak = tracemalloc.get_traced_memory()
     tracemalloc.stop()
-    return KNOWN_SOLUTIONS, elapsed, peak
+    return known_solutions_for_queen_count(queen_count), elapsed, peak
 
 
 def _count_from(cols: int, pos_diag: int, neg_diag: int, mask: int) -> int:
